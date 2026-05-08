@@ -94,7 +94,17 @@ export default function Home() {
 
   return (
     <main className="pb-12">
-      <div className="w-[min(1180px,calc(100%-1rem))] sm:w-[min(1180px,calc(100%-1.5rem))] mx-auto mt-[-1.35rem] sm:mt-[-2rem] sticky top-2 sm:top-3 z-50">
+      <section className="w-[min(1200px,calc(100%-1rem))] sm:w-[min(1200px,calc(100%-1.5rem))] mx-auto pt-6 sm:pt-9">
+        <div className="rounded-[30px] bg-[linear-gradient(135deg,#431417,#ff1818_58%,#2cb5a7)] p-5 sm:p-8 text-white shadow-[0_20px_44px_rgba(255,24,24,0.16)]">
+          <div className="text-xs font-black uppercase tracking-[0.2em] text-white/74">Coffee Directory</div>
+          <h1 className="mt-2 font-display text-[clamp(2.25rem,6vw,4.2rem)] leading-none text-white">Coffee Shop Padang</h1>
+          <p className="mt-3 max-w-2xl text-sm sm:text-base font-bold leading-relaxed text-white/84">
+            Jelajahi coffee shop, cafe, dan tempat nongkrong pilihan di Padang dengan filter area, harga, rating, dan urutan yang mudah dipakai.
+          </p>
+        </div>
+      </section>
+
+      <div className="w-[min(1180px,calc(100%-1rem))] sm:w-[min(1180px,calc(100%-1.5rem))] mx-auto mt-4 sticky top-2 sm:top-3 z-50">
         <button
           type="button"
           onClick={() => setFiltersOpen(open => !open)}
@@ -174,17 +184,8 @@ export default function Home() {
       </div>
 
       <section className="w-[min(1200px,calc(100%-1rem))] sm:w-[min(1200px,calc(100%-1.5rem))] mx-auto mt-5 sm:mt-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-3">
-          <div>
-            <div className="text-[#0e8f85] text-xs font-black uppercase tracking-[0.18em]">Coffee Directory</div>
-            <h2 className="font-display text-[clamp(1.8rem,3vw,2.5rem)] leading-none text-[#431417]">Jelajahi semua coffee shop di Padang</h2>
-            <p className="text-muted font-bold max-w-[38rem] mt-1">
-              Gunakan filter area, harga, dan urutan untuk menemukan spot yang paling cocok dengan suasana yang kamu cari.
-            </p>
-          </div>
-          <div className="inline-flex w-full justify-center md:w-fit items-center rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm font-black text-[#431417] shadow-sm">
-            {filteredData.length} tempat
-          </div>
+        <div className="inline-flex w-full justify-center md:w-fit items-center rounded-2xl border border-primary/10 bg-white px-4 py-3 text-sm font-black text-[#431417] shadow-sm">
+          {filteredData.length} tempat
         </div>
       </section>
 
