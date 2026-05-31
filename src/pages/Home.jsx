@@ -4,7 +4,7 @@ import CoffeeCard from '../components/CoffeeCard';
 import CoffeeModal from '../components/CoffeeModal';
 import { coffeeShops as fallbackData } from '../lib/coffee-data.js';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
-import { ArrowUpDown, MapPin, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 
 export default function Home() {
   const [data, setData] = useState([]);
@@ -14,6 +14,7 @@ export default function Home() {
   const [price, setPrice] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [selectedShop, setSelectedShop] = useState(null);
+  const [filtersVisible, setFiltersVisible] = useState(false);
 
   const handleShopUpdated = (updatedShop) => {
     setData(prev => prev.map(shop => shop.id === updatedShop.id ? updatedShop : shop));
@@ -39,8 +40,8 @@ export default function Home() {
       const q = search.toLowerCase();
       result = result.filter(shop =>
         shop.name.toLowerCase().includes(q) ||
-        shop.location.toLowerCase().includes(q) ||
-        shop.area.toLowerCase().includes(q) ||
+        shop.location?.toLowerCase().includes(q) ||
+        shop.area?.toLowerCase().includes(q) ||
         shop.tags?.some(t => t.toLowerCase().includes(q))
       );
     }
@@ -57,75 +58,81 @@ export default function Home() {
   }, [data, search, area, price, sortBy]);
 
   const areas = useMemo(() => [...new Set(data.map(shop => shop.area))].filter(Boolean), [data]);
+  const activeFilters = [area !== 'all', price !== 'all', sortBy !== 'newest'].filter(Boolean).length;
 
   return (
-    <main className="min-h-screen pb-16">
-      {/* Hero Section */}
-      <section className="bg-white border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="max-w-2xl">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-text-main leading-tight">
-              Temukan spot ngopi<br />
-              <span className="text-primary">terbaik di Padang</span>
-            </h1>
-            <p className="mt-4 text-base sm:text-lg text-text-secondary leading-relaxed max-w-xl">
-              Kurasi coffee shop, cafe, dan tempat nongkrong pilihan di Kota Padang dengan rating dari komunitas.
-            </p>
-          </div>
+    <main className="min-h-screen pb-20 md:pb-16">
+      {/* Hero */}
+      <section className="bg-cream">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary leading-[1.1]">
+            Temukan tempat<br className="sm:hidden" /> ngopi favorit
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-text-secondary max-w-lg leading-relaxed">
+            Kurasi coffee shop dan cafe terbaik di Kota Padang, lengkap dengan rating komunitas.
+          </p>
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-border">
+      {/* Search & Filters */}
+      <section className="sticky top-14 sm:top-16 z-40 bg-white/90 backdrop-blur-xl border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex gap-2">
+            {/* Search input */}
             <label className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
-                placeholder="Cari nama, lokasi, atau tag..."
+                placeholder="Cari coffee shop..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-sm border border-border rounded-lg bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+                className="w-full h-11 pl-10 pr-4 text-sm border border-border rounded-xl bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
               />
+              {search && (
+                <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+                  <X size={16} />
+                </button>
+              )}
             </label>
-            <label className="relative">
-              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <select value={area} onChange={e => setArea(e.target.value)} className="h-10 pl-8 pr-8 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all appearance-none">
-                <option value="all">Semua Area</option>
-                {areas.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </label>
-            <label className="relative">
-              <SlidersHorizontal size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <select value={price} onChange={e => setPrice(e.target.value)} className="h-10 pl-8 pr-8 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all appearance-none">
-                <option value="all">Semua Harga</option>
-                <option value="budget">Budget (&lt; 25k)</option>
-                <option value="mid">Menengah (25-50k)</option>
-                <option value="premium">Premium (&gt; 50k)</option>
-              </select>
-            </label>
-            <label className="relative">
-              <ArrowUpDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="h-10 pl-8 pr-8 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all appearance-none">
-                <option value="newest">Terbaru</option>
-                <option value="rating">Rating Tertinggi</option>
-                <option value="price_asc">Harga Terendah</option>
-                <option value="price_desc">Harga Tertinggi</option>
-                <option value="reviews">Ulasan Terbanyak</option>
-              </select>
-            </label>
+            {/* Filter toggle (mobile) */}
+            <button
+              onClick={() => setFiltersVisible(!filtersVisible)}
+              className="sm:hidden h-11 w-11 flex items-center justify-center rounded-xl border border-border bg-white relative active:scale-95 transition-transform"
+            >
+              <SlidersHorizontal size={18} className="text-text-secondary" />
+              {activeFilters > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 grid place-items-center rounded-full bg-primary text-cream text-[10px] font-bold">{activeFilters}</span>
+              )}
+            </button>
+          </div>
+
+          {/* Desktop filters always visible, mobile toggleable */}
+          <div className={`${filtersVisible ? 'flex' : 'hidden'} sm:flex flex-wrap gap-2 mt-2 sm:mt-2`}>
+            <select value={area} onChange={e => setArea(e.target.value)} className="h-10 px-3 pr-8 text-sm border border-border rounded-xl bg-white focus:border-primary outline-none transition-all appearance-none">
+              <option value="all">Semua Area</option>
+              {areas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <select value={price} onChange={e => setPrice(e.target.value)} className="h-10 px-3 pr-8 text-sm border border-border rounded-xl bg-white focus:border-primary outline-none transition-all appearance-none">
+              <option value="all">Semua Harga</option>
+              <option value="budget">Budget (&lt; 25k)</option>
+              <option value="mid">Menengah (25-50k)</option>
+              <option value="premium">Premium (&gt; 50k)</option>
+            </select>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="h-10 px-3 pr-8 text-sm border border-border rounded-xl bg-white focus:border-primary outline-none transition-all appearance-none">
+              <option value="newest">Terbaru</option>
+              <option value="rating">Rating Tertinggi</option>
+              <option value="price_asc">Harga Terendah</option>
+              <option value="price_desc">Harga Tertinggi</option>
+            </select>
           </div>
         </div>
       </section>
 
       {/* Results */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-text-secondary font-medium">
-            {loading ? 'Memuat...' : `${filteredData.length} tempat ditemukan`}
-          </p>
-        </div>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-5">
+        <p className="text-sm text-muted font-medium mb-4">
+          {loading ? 'Memuat...' : `${filteredData.length} tempat ditemukan`}
+        </p>
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -149,36 +156,17 @@ export default function Home() {
         ) : (
           <div className="text-center py-20">
             <p className="text-muted text-sm">Tidak ada coffee shop yang cocok dengan filter.</p>
+            <button onClick={() => { setSearch(''); setArea('all'); setPrice('all'); }} className="mt-3 text-sm font-medium text-primary">
+              Reset filter
+            </button>
           </div>
         )}
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-12">
-        <div className="rounded-2xl bg-accent p-6 sm:p-8 lg:p-10">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-lg">
-              <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight">
-                Punya coffee shop yang ingin tampil?
-              </h3>
-              <p className="mt-2 text-sm text-white/70 leading-relaxed">
-                Kami membuka peluang listing untuk coffee shop, cafe, dan tempat hangout di Padang.
-              </p>
-            </div>
-            <a
-              href="mailto:hello@padangpicks.com"
-              className="inline-flex items-center justify-center h-11 px-6 text-sm font-semibold text-accent bg-white rounded-lg hover:bg-white/90 transition-colors shrink-0"
-            >
-              Kirim Pengajuan
-            </a>
-          </div>
-        </div>
       </section>
 
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-4 sm:px-6 mt-12 pt-6 border-t border-border">
         <p className="text-center text-xs text-muted pb-6">
-          &copy; {new Date().getFullYear()} PadangPicks. Dibangun dengan cinta di Kota Padang.
+          &copy; {new Date().getFullYear()} Harmonee. Dibuat dengan cinta di Kota Padang.
         </p>
       </footer>
 

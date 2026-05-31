@@ -1,41 +1,77 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Montserrat", sans-serif;
-  --font-display: "Montserrat", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+  --font-display: "Playfair Display", serif;
   
-  --color-primary: #e63946;
-  --color-primary-hover: #c1121f;
-  --color-accent: #1d3557;
-  --color-accent-light: #457b9d;
-  --color-text-main: #1d1d1f;
-  --color-text-secondary: #6e6e73;
-  --color-muted: #86868b;
+  /* Primary palette from logo */
+  --color-primary: #431417;
+  --color-primary-hover: #5a1d21;
+  --color-primary-light: #6b2a2e;
+  
+  /* Cream/beige from logo background */
+  --color-cream: #f2e6c9;
+  --color-cream-light: #f8f2e4;
+  --color-cream-dark: #e8d9b5;
+  
+  /* Accent warm */
+  --color-accent: #8b1a1a;
+  --color-accent-light: #a52a2a;
+  
+  /* Neutrals */
+  --color-text-main: #1a1a1a;
+  --color-text-secondary: #5c5c5c;
+  --color-muted: #8a8a8a;
   --color-surface: #ffffff;
-  --color-surface-alt: #f5f5f7;
-  --color-border: #e5e5e7;
-  --color-border-light: #f0f0f2;
+  --color-surface-alt: #faf8f5;
+  --color-border: #e8e4df;
+  --color-border-light: #f0ece7;
 }
 
 @layer base {
   body {
     @apply font-sans text-text-main min-h-screen antialiased;
-    background-color: #fafafa;
+    background-color: #fdfcfa;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-bold text-text-main;
+    @apply font-display font-bold text-primary;
+  }
+
+  /* Better touch targets for mobile */
+  button, a, select, input {
+    @apply touch-manipulation;
+  }
+
+  /* Safe area padding for notch devices */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
 @layer utilities {
+  /* Hide scrollbar but keep scrollable */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
@@ -49,9 +85,19 @@
     to { opacity: 1; transform: translateX(0); }
   }
 
+  @keyframes slideInBottom {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
+    from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes bounce-subtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
   }
 
   .animate-fadeIn {
@@ -59,7 +105,7 @@
   }
 
   .animate-slideUp {
-    animation: slideUp 300ms ease-out both;
+    animation: slideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .animate-slideDown {
@@ -67,7 +113,7 @@
   }
 
   .animate-scaleIn {
-    animation: scaleIn 200ms ease-out both;
+    animation: scaleIn 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .modal-backdrop {
@@ -75,11 +121,11 @@
   }
 
   .modal-panel {
-    animation: scaleIn 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .modal-panel-bottom {
-    animation: slideUp 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: slideInBottom 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @media (min-width: 640px) {
@@ -89,10 +135,10 @@
   }
 
   .modal-content {
-    animation: fadeIn 200ms ease-out 100ms both;
+    animation: fadeIn 200ms ease-out 80ms both;
   }
 
   .modal-icon {
-    animation: scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+    animation: scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
   }
 }

@@ -11,151 +11,60 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
   const [ratingLoading, setRatingLoading] = useState(false);
 
   useEffect(() => {
-    const fetchUserRating = async () => {
-      setUserRating(0);
-      setRatingStatus('');
-      if (!isOpen || !shop?.id || !user || !supabase) return;
-
-      const { data, error } = await supabase
-        .from('coffee_shop_ratings')
-        .select('rating')
-        .eq('user_id', user.id)
-        .eq('coffee_shop_id', shop.id)
-        .maybeSingle();
-
-      if (!error && data?.rating) setUserRating(data.rating);
-    };
-    fetchUserRating();
+    setUserRating(0); setRatingStatus('');
+    if (!isOpen || !shop?.id || !user || !supabase) return;
+    supabase.from('coffee_shop_ratings').select('rating')
+      .eq('user_id', user.id).eq('coffee_shop_id', shop.id)
+      .maybeSingle().then(({ data }) => { if (data?.rating) setUserRating(data.rating); });
   }, [isOpen, shop?.id, user]);
 
   if (!isOpen || !shop) return null;
 
   const handleRate = async (rating) => {
     if (!user) { setRatingStatus('Masuk dulu untuk memberi rating.'); return; }
-    if (!supabase || !shop.id) { setRatingStatus('Rating hanya tersedia untuk data dari Supabase.'); return; }
-
-    setRatingLoading(true);
-    setRatingStatus('');
-
-    const { error } = await supabase
-      .from('coffee_shop_ratings')
+    if (!supabase || !shop.id) { setRatingStatus('Rating tidak tersedia.'); return; }
+    setRatingLoading(true); setRatingStatus('');
+    const { error } = await supabase.from('coffee_shop_ratings')
       .upsert({ user_id: user.id, coffee_shop_id: shop.id, rating }, { onConflict: 'user_id,coffee_shop_id' });
-
     if (error) { setRatingStatus(error.message); setRatingLoading(false); return; }
-
-    setUserRating(rating);
-    setRatingStatus('Rating tersimpan!');
-
-    const { data: updatedShop } = await supabase.from('coffee_shops').select('*').eq('id', shop.id).single();
-    if (updatedShop) onShopUpdated?.(normalizeCoffeeShop(updatedShop));
+    setUserRating(rating); setRatingStatus('Tersimpan!');
+    const { data: u } = await supabase.from('coffee_shops').select('*').eq('id', shop.id).single();
+    if (u) onShopUpdated?.(normalizeCoffeeShop(u));
     setRatingLoading(false);
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={onClose}>
-      <div
-        className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto relative shadow-2xl modal-panel-bottom"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Close button */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors">
-          <X size={16} />
-        </button>
-
-        {/* Image */}
-        {shop.photo ? (
-          <img src={shop.photo} alt={shop.name} className="w-full h-52 sm:h-64 object-cover" />
-        ) : (
-          <div className="w-full h-44 sm:h-56 bg-surface-alt flex items-center justify-center text-muted font-medium">No image</div>
-        )}
-
-        {/* Content */}
-        <div className="p-5 sm:p-6 space-y-5 modal-content">
-          {/* Title & badges */}
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto relative shadow-2xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
+        <div className="sm:hidden sticky top-0 z-10 pt-3 pb-1 bg-white"><div className="w-10 h-1 bg-border rounded-full mx-auto" /></div>
+        <button onClick={onClose} className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors"><X size={16} /></button>
+        {shop.photo ? <img src={shop.photo} alt={shop.name} className="w-full h-48 sm:h-64 object-cover" /> : <div className="w-full h-40 sm:h-56 bg-cream flex items-center justify-center text-muted">No image</div>}
+        <div className="p-5 sm:p-6 space-y-4 modal-content">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-text-main leading-tight">{shop.name}</h2>
+            <h2 className="font-display text-2xl sm:text-3xl text-primary leading-tight">{shop.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-600">
-                <Star size={14} className="fill-amber-500 text-amber-500" />
-                {shop.rating || 0} ({shop.reviewCount || 0} ulasan)
-              </span>
-              {shop.area && <span className="text-xs font-medium text-accent-light bg-accent/5 px-2 py-0.5 rounded">{shop.area}</span>}
-              {shop.itemCategory && <span className="text-xs font-medium text-text-secondary bg-surface-alt px-2 py-0.5 rounded">{shop.itemCategory}</span>}
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-600"><Star size={14} className="fill-amber-500 text-amber-500" />{shop.rating || 0} ({shop.reviewCount || 0})</span>
+              {shop.area && <span className="text-xs font-medium text-primary bg-cream px-2.5 py-0.5 rounded-lg">{shop.area}</span>}
             </div>
-            {shop.tags?.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {shop.tags.map((tag, i) => (
-                  <span key={i} className="text-xs text-muted bg-surface-alt px-2 py-1 rounded">{tag}</span>
-                ))}
-              </div>
-            )}
+            {shop.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{shop.tags.map((tag, i) => <span key={i} className="text-xs text-muted bg-surface-alt px-2.5 py-1 rounded-lg">{tag}</span>)}</div>}
           </div>
-
-          {/* Description */}
-          <p className="text-sm text-text-secondary leading-relaxed">
-            {shop.description || 'Belum ada deskripsi untuk tempat ini.'}
-          </p>
-
-          {/* Info grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <p className="text-sm text-text-secondary leading-relaxed">{shop.description || 'Belum ada deskripsi.'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <InfoItem icon={MapPin} label="Lokasi" value={`${shop.location}${shop.area ? `, ${shop.area}` : ''}`} />
             <InfoItem icon={Clock} label="Jam Buka" value={shop.hours || '-'} />
-            <InfoItem icon={Star} label="Harga" value={`Rp${((shop.priceMin || 0) / 1000).toFixed(0)}k - Rp${((shop.priceMax || 0) / 1000).toFixed(0)}k`} />
+            <InfoItem icon={Star} label="Harga" value={`Rp${((shop.priceMin||0)/1000).toFixed(0)}k - Rp${((shop.priceMax||0)/1000).toFixed(0)}k`} />
           </div>
-
-          {/* User Rating */}
-          <div className="p-4 rounded-xl bg-surface-alt border border-border-light">
-            <div className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Rating Kamu</div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {[1, 2, 3, 4, 5].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => handleRate(r)}
-                  disabled={ratingLoading}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
-                    r <= userRating
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-white border border-border text-muted hover:border-amber-300 hover:text-amber-500'
-                  } disabled:opacity-50`}
-                  aria-label={`Rating ${r}`}
-                >
-                  <Star size={15} className={r <= userRating ? 'fill-current' : ''} />
-                </button>
-              ))}
-              {ratingLoading && <span className="text-xs text-muted ml-2">Menyimpan...</span>}
+          <div className="p-4 rounded-xl bg-cream/50 border border-cream-dark">
+            <div className="text-xs font-semibold text-primary uppercase tracking-wide mb-2">Rating Kamu</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {[1,2,3,4,5].map(r=><button key={r} onClick={()=>handleRate(r)} disabled={ratingLoading} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-90 ${r<=userRating?'bg-amber-500 text-white':'bg-white border border-border text-muted hover:border-amber-300'} disabled:opacity-50`}><Star size={16} className={r<=userRating?'fill-current':''}/></button>)}
+              {ratingLoading&&<span className="text-xs text-muted ml-2">...</span>}
             </div>
-            {ratingStatus && <p className="mt-2 text-xs font-medium text-primary">{ratingStatus}</p>}
+            {ratingStatus&&<p className="mt-2 text-xs font-medium text-primary">{ratingStatus}</p>}
           </div>
-
-          {/* Action buttons */}
           <div className="flex gap-2 flex-col sm:flex-row">
-            {shop.mapsUrl && (
-              <a
-                href={shop.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 h-11 inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
-              >
-                <ExternalLink size={15} /> Google Maps
-              </a>
-            )}
-            {shop.instagram && (
-              <a
-                href={shop.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 h-11 inline-flex items-center justify-center gap-2 text-sm font-semibold text-text-main bg-surface-alt rounded-lg hover:bg-border-light transition-colors border border-border"
-              >
-                <ExternalLink size={15} /> Instagram
-              </a>
-            )}
-            <button
-              onClick={onClose}
-              className="flex-1 h-11 text-sm font-semibold text-text-secondary bg-white rounded-lg border border-border hover:bg-surface-alt transition-colors"
-            >
-              Tutup
-            </button>
+            {shop.mapsUrl&&<a href={shop.mapsUrl} target="_blank" rel="noopener noreferrer" className="flex-1 h-12 inline-flex items-center justify-center gap-2 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform"><ExternalLink size={15}/>Google Maps</a>}
+            {shop.instagram&&<a href={shop.instagram} target="_blank" rel="noopener noreferrer" className="flex-1 h-12 inline-flex items-center justify-center gap-2 text-sm font-semibold text-text-main bg-surface-alt rounded-xl border border-border active:scale-95 transition-transform"><ExternalLink size={15}/>Instagram</a>}
           </div>
         </div>
       </div>
@@ -165,8 +74,8 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
 
 function InfoItem({ icon: Icon, label, value }) {
   return (
-    <div className="flex items-start gap-3 p-3 rounded-xl bg-white border border-border-light">
-      <Icon size={16} className="text-accent-light mt-0.5 shrink-0" />
+    <div className="flex items-start gap-3 p-3 rounded-xl bg-surface-alt border border-border-light">
+      <Icon size={16} className="text-primary/60 mt-0.5 shrink-0" />
       <div>
         <div className="text-xs font-medium text-muted uppercase tracking-wide">{label}</div>
         <div className="text-sm font-medium text-text-main mt-0.5">{value}</div>
