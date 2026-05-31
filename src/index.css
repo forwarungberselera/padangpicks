@@ -4,134 +4,95 @@
   --font-sans: "Montserrat", sans-serif;
   --font-display: "Montserrat", sans-serif;
   
-  --color-primary: #ff1818;
-  --color-primary-light: #ff4a4a;
-  --color-accent: #ff3300;
-  --color-accent-dark: #d90000;
-  --color-text-main: #341314;
-  --color-muted: #8b4a4e;
-  --color-surface: rgba(255, 255, 255, 0.92);
-  --color-bg-light: #fff5f3;
+  --color-primary: #e63946;
+  --color-primary-hover: #c1121f;
+  --color-accent: #1d3557;
+  --color-accent-light: #457b9d;
+  --color-text-main: #1d1d1f;
+  --color-text-secondary: #6e6e73;
+  --color-muted: #86868b;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f5f5f7;
+  --color-border: #e5e5e7;
+  --color-border-light: #f0f0f2;
 }
 
 @layer base {
   body {
-    @apply font-sans text-text-main min-h-screen;
-    background:
-      radial-gradient(circle at top left, rgba(255, 51, 0, 0.16), transparent 30%),
-      radial-gradient(circle at top right, rgba(193, 18, 31, 0.14), transparent 28%),
-      linear-gradient(180deg, #fff8f7 0%, #fff4f2 42%, #fffdfc 100%);
+    @apply font-sans text-text-main min-h-screen antialiased;
+    background-color: #fafafa;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-black text-[#58151c];
+    @apply font-display font-bold text-text-main;
   }
 }
 
 @layer utilities {
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
   }
 
-  @keyframes modal-backdrop-in {
-    from {
-      opacity: 0;
-      backdrop-filter: blur(0);
-    }
-    to {
-      opacity: 1;
-      backdrop-filter: blur(8px);
-    }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
-  @keyframes modal-panel-in {
-    0% {
-      opacity: 0;
-      transform: translateY(28px) scale(0.96);
-    }
-    72% {
-      opacity: 1;
-      transform: translateY(-3px) scale(1.01);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+  .animate-fadeIn {
+    animation: fadeIn 200ms ease-out both;
   }
 
-  @keyframes modal-panel-bottom-in {
-    0% {
-      opacity: 0;
-      transform: translateY(100%);
-    }
-    72% {
-      opacity: 1;
-      transform: translateY(-8px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .animate-slideUp {
+    animation: slideUp 300ms ease-out both;
   }
 
-  @keyframes modal-content-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .animate-slideDown {
+    animation: slideDown 200ms ease-out both;
   }
 
-  @keyframes modal-icon-pop {
-    0% {
-      opacity: 0;
-      transform: scale(0.72) rotate(-8deg);
-    }
-    70% {
-      opacity: 1;
-      transform: scale(1.08) rotate(2deg);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) rotate(0);
-    }
+  .animate-scaleIn {
+    animation: scaleIn 200ms ease-out both;
   }
 
   .modal-backdrop {
-    animation: modal-backdrop-in 180ms ease-out both;
+    animation: fadeIn 150ms ease-out both;
   }
 
   .modal-panel {
-    animation: modal-panel-in 340ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
-    transform-origin: center;
+    animation: scaleIn 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .modal-panel-bottom {
-    animation: modal-panel-bottom-in 340ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    animation: slideUp 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   @media (min-width: 640px) {
     .modal-panel-bottom {
-      animation-name: modal-panel-in;
-      transform-origin: center;
+      animation-name: scaleIn;
     }
   }
 
   .modal-content {
-    animation: modal-content-in 280ms ease-out 90ms both;
+    animation: fadeIn 200ms ease-out 100ms both;
   }
 
   .modal-icon {
-    animation: modal-icon-pop 360ms cubic-bezier(0.2, 0.9, 0.2, 1) 80ms both;
+    animation: scaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
   }
 }

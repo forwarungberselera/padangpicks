@@ -26,7 +26,6 @@ export default function CoffeeCard({ shop, onClick }) {
   const getStatus = () => {
     const d = new Date();
     const currentHour = d.getHours() + d.getMinutes() / 60;
-
     if (shop.openHour < shop.closeHour) {
       return currentHour >= shop.openHour && currentHour < shop.closeHour;
     }
@@ -38,106 +37,109 @@ export default function CoffeeCard({ shop, onClick }) {
   return (
     <>
       <div
-        className="w-full bg-white border border-primary/10 rounded-[22px] overflow-hidden shadow-[0_12px_30px_rgba(52,19,20,0.07)] flex flex-col relative isolate transition-all duration-300 cursor-pointer hover:-translate-y-1.5 hover:shadow-[0_22px_46px_rgba(52,19,20,0.13)] hover:border-primary/20 group animate-in fade-in slide-in-from-bottom-4"
+        className="group bg-white rounded-2xl border border-border overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-border/60 hover:-translate-y-0.5"
         onClick={() => onClick(shop)}
       >
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#fff7f4] to-transparent pointer-events-none -z-10" />
-
-        <button
-          onClick={handleFav}
-          className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-2xl shadow-[0_12px_24px_rgba(0,0,0,0.14)] transition-all hover:scale-105 ${isFav ? 'bg-primary text-white' : 'bg-white/92 text-[#8b4a4e] backdrop-blur-md'}`}
-          aria-label="Toggle favorit"
-        >
-          <Heart size={18} className={isFav ? 'fill-current' : ''} />
-        </button>
-
-        <div className="relative overflow-hidden">
+        {/* Image */}
+        <div className="relative aspect-[4/3] overflow-hidden">
           {shop.photo ? (
-            <img src={shop.photo} alt={shop.name} className="w-full h-[185px] sm:h-[205px] object-cover block transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+            <img src={shop.photo} alt={shop.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
           ) : (
-            <div className="w-full h-[185px] sm:h-[205px] bg-gradient-to-br from-[#ffd8d3] to-[#c6f4ef] flex items-center justify-center text-sm font-black text-[#8c232b] transition-transform duration-500 group-hover:scale-105">
+            <div className="w-full h-full bg-surface-alt flex items-center justify-center text-sm font-medium text-muted">
               No image
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/48 to-transparent" />
-          <div className="absolute left-3 bottom-3 flex items-center gap-2">
-            <span className={`text-xs px-3 py-1.5 rounded-full font-black shadow-sm ${isOpen ? 'bg-[#dff8f2] text-[#0e605b]' : 'bg-[#ffe4e4] text-red-700'}`}>
+          
+          {/* Favorite button */}
+          <button
+            onClick={handleFav}
+            className={`absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full shadow-sm transition-all ${
+              isFav ? 'bg-primary text-white' : 'bg-white/90 text-text-secondary hover:text-primary backdrop-blur-sm'
+            }`}
+            aria-label="Toggle favorit"
+          >
+            <Heart size={16} className={isFav ? 'fill-current' : ''} />
+          </button>
+
+          {/* Status badge */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold backdrop-blur-sm ${
+              isOpen ? 'bg-emerald-50/90 text-emerald-700' : 'bg-red-50/90 text-red-600'
+            }`}>
               {isOpen ? 'Buka' : 'Tutup'}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-black bg-white/92 text-[#58151c] shadow-sm">
-              <Star size={13} className="fill-[#f5a623] text-[#f5a623]" />
-              {shop.rating || 0}
-            </span>
+            {shop.isFeatured && (
+              <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50/90 text-amber-700 backdrop-blur-sm">
+                Featured
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="p-3.5 sm:p-4 flex-1 flex flex-col gap-3 z-10">
+        {/* Content */}
+        <div className="p-4 flex flex-col gap-2.5">
           <div>
-            <h3 className="font-display text-[1.25rem] sm:text-[1.35rem] font-bold leading-tight text-[#431417]">{shop.name}</h3>
-            <div className="mt-1 flex items-start gap-1.5 text-[0.82rem] font-bold text-[#8b4a4e]">
-              <MapPin size={15} className="mt-0.5 shrink-0 text-[#0e8f85]" />
-              <span className="leading-snug">{shop.area} - {shop.location}</span>
+            <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{shop.name}</h3>
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-text-secondary">
+              <MapPin size={12} className="shrink-0" />
+              <span className="line-clamp-1">{shop.area} · {shop.location}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            <span className="bg-[#fff0ed] px-3 py-1.5 rounded-full text-accent-dark font-black">
-              Rp{((shop.priceMin || 0) / 1000).toFixed(0)}k - {((shop.priceMax || 0) / 1000).toFixed(0)}k
+          {/* Meta info */}
+          <div className="flex items-center gap-3 text-xs text-text-secondary">
+            <span className="flex items-center gap-1">
+              <Star size={12} className="text-amber-500 fill-amber-500" />
+              <span className="font-semibold text-text-main">{shop.rating || 0}</span>
+              <span>({shop.reviewCount || 0})</span>
             </span>
-            <span className="inline-flex items-center gap-1 bg-[#e9fbf8] px-3 py-1.5 rounded-full text-[#0e605b] font-black">
-              <Clock3 size={13} />
+            <span className="flex items-center gap-1">
+              <Clock3 size={12} />
               {shop.hours}
-            </span>
-            <span className="bg-[#f7f2ff] px-3 py-1.5 rounded-full text-[#5b3f91] font-black">
-              {shop.reviewCount || 0} ulasan
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
-            {shop.tags?.slice(0, 3).map((tag, i) => (
-              <span key={i} className="text-[0.72rem] px-2.5 py-1 rounded-full bg-[#f7f7f4] text-[#6b4b4e] font-bold">
+          {/* Price & Tags */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-primary bg-primary/5 px-2.5 py-1 rounded-md">
+              Rp{((shop.priceMin || 0) / 1000).toFixed(0)}k - {((shop.priceMax || 0) / 1000).toFixed(0)}k
+            </span>
+            {shop.tags?.slice(0, 2).map((tag, i) => (
+              <span key={i} className="text-xs text-muted bg-surface-alt px-2 py-1 rounded-md">
                 {tag}
               </span>
             ))}
-            {shop.tags?.length > 3 && (
-              <span className="text-[0.72rem] px-2.5 py-1 rounded-full bg-[#f7f7f4] text-[#6b4b4e] font-bold">
-                +{shop.tags.length - 3}
-              </span>
+            {shop.tags?.length > 2 && (
+              <span className="text-xs text-muted">+{shop.tags.length - 2}</span>
             )}
           </div>
         </div>
       </div>
 
+      {/* Login notice modal */}
       {noticeOpen && (
-        <div className="fixed inset-0 z-[360] flex items-end justify-center bg-[#201113]/72 p-0 backdrop-blur-sm sm:items-center sm:p-4 modal-backdrop" onClick={() => setNoticeOpen(false)}>
-          <div className="w-full max-w-[430px] rounded-t-[28px] border border-white/20 bg-white p-5 shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:rounded-[28px] sm:p-6 modal-panel-bottom" onClick={e => e.stopPropagation()}>
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-3xl bg-[#fff0ed] text-primary modal-icon">
-              <Heart size={26} />
-            </div>
-            <div className="modal-content">
-              <h3 className="mt-4 text-center font-display text-3xl leading-none text-[#431417]">
-                Masuk dulu untuk favorit
-              </h3>
-              <p className="mx-auto mt-3 max-w-[20rem] text-center text-sm font-bold leading-relaxed text-muted">
-                Simpan {shop.name} ke daftar favoritmu setelah masuk atau membuat akun PadangPicks.
+        <div className="fixed inset-0 z-[360] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 modal-backdrop" onClick={() => setNoticeOpen(false)}>
+          <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-xl modal-panel" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 modal-icon">
+                <Heart size={22} className="text-primary" />
+              </div>
+              <h3 className="font-bold text-lg text-text-main">Masuk untuk favorit</h3>
+              <p className="mt-2 text-sm text-text-secondary">
+                Simpan {shop.name} ke daftar favoritmu setelah masuk.
               </p>
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              <div className="mt-5 flex gap-2">
                 <button
-                  type="button"
-                  onClick={() => {
-                    setNoticeOpen(false);
-                    setAuthOpen(true);
-                  }}
-                  className="inline-flex min-h-[50px] items-center justify-center rounded-2xl bg-primary px-4 text-sm font-black text-white transition-colors hover:bg-accent-dark"
+                  onClick={() => { setNoticeOpen(false); setAuthOpen(true); }}
+                  className="flex-1 h-10 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
                 >
-                  Masuk Sekarang
+                  Masuk
                 </button>
                 <button
-                  type="button"
                   onClick={() => setNoticeOpen(false)}
-                  className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-primary/12 bg-white px-4 text-sm font-black text-accent-dark transition-colors hover:bg-[#fff8f6]"
+                  className="flex-1 h-10 text-sm font-semibold text-text-secondary bg-surface-alt rounded-lg hover:bg-border-light transition-colors"
                 >
-                  Nanti Dulu
+                  Nanti
                 </button>
               </div>
             </div>
