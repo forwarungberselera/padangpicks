@@ -3,7 +3,7 @@ import { ArrowUpDown, Clock3, ExternalLink, MapPin, Search, Star, X } from 'luci
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper';
 
-export default function DirectoryPage({ table, eyebrow, title, description, emptyText }) {
+export default function DirectoryPage({ table, title, description, emptyText }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -13,29 +13,16 @@ export default function DirectoryPage({ table, eyebrow, title, description, empt
 
   useEffect(() => {
     let cancelled = false;
-
     const fetchItems = async () => {
-      if (!supabase) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      if (!supabase) { setLoading(false); return; }
+      const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
       if (!cancelled) {
         setItems(error ? [] : normalizeCoffeeShops(data || []));
         setLoading(false);
       }
     };
-
     fetchItems();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [table]);
 
   const areas = useMemo(() => [...new Set(items.map(item => item.area))].filter(Boolean), [items]);
@@ -43,19 +30,10 @@ export default function DirectoryPage({ table, eyebrow, title, description, empt
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
     let result = [...items];
-
     if (query) {
-      result = result.filter(item => [
-        item.name,
-        item.area,
-        item.location,
-        item.itemCategory,
-        ...(item.tags || []),
-      ].filter(Boolean).some(value => String(value).toLowerCase().includes(query)));
+      result = result.filter(item => [item.name, item.area, item.location, item.itemCategory, ...(item.tags || [])].filter(Boolean).some(v => String(v).toLowerCase().includes(query)));
     }
-
     if (area !== 'all') result = result.filter(item => item.area === area);
-
     result.sort((a, b) => {
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'price_asc') return (a.priceMin || 0) - (b.priceMin || 0);
@@ -63,103 +41,118 @@ export default function DirectoryPage({ table, eyebrow, title, description, empt
       if (sortBy === 'featured') return Number(b.isFeatured || false) - Number(a.isFeatured || false);
       return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     });
-
     return result;
   }, [items, search, area, sortBy]);
 
   return (
-    <main className="pb-12">
-      <section className="w-[min(1200px,calc(100%-1rem))] sm:w-[min(1200px,calc(100%-1.5rem))] mx-auto pt-6 sm:pt-9">
-        <div className="rounded-[30px] bg-[linear-gradient(135deg,#431417,#ff1818_58%,#2cb5a7)] p-5 sm:p-8 text-white shadow-[0_20px_44px_rgba(255,24,24,0.16)]">
-          <div className="text-xs font-black uppercase tracking-[0.2em] text-white/74">{eyebrow}</div>
-          <h1 className="mt-2 font-display text-[clamp(2.25rem,6vw,4.2rem)] leading-none text-white">{title}</h1>
-          <p className="mt-3 max-w-2xl text-sm sm:text-base font-bold leading-relaxed text-white/84">{description}</p>
+    <main className="min-h-screen pb-16">
+      {/* Header */}
+      <section className="bg-white border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-12">
+          <h1 className="text-3xl sm:text-4xl font-bold text-text-main">{title}</h1>
+          <p className="mt-2 text-base text-text-secondary max-w-xl">{description}</p>
         </div>
       </section>
 
-      <section className="w-[min(1180px,calc(100%-1rem))] sm:w-[min(1180px,calc(100%-1.5rem))] mx-auto mt-4 grid gap-2 rounded-[24px] border border-white/70 bg-white/92 p-2 sm:grid-cols-[1.4fr_0.9fr_0.9fr] sm:p-3 shadow-[0_20px_44px_rgba(52,19,20,0.12)] backdrop-blur-xl">
-        <label className="relative block">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0e8f85]" />
-          <input
-            type="text"
-            placeholder="Cari nama, lokasi, atau tag"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full min-h-[50px] rounded-2xl border border-primary/10 bg-white pl-10 pr-3 text-sm font-bold outline-none transition-all focus:border-[#2cb5a7] focus:ring-4 focus:ring-[#2cb5a7]/12"
-          />
-        </label>
-        <label className="relative block">
-          <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0e8f85]" />
-          <select value={area} onChange={e => setArea(e.target.value)} className="w-full min-h-[50px] rounded-2xl border border-primary/10 bg-white pl-10 pr-3 text-sm font-bold outline-none transition-all focus:border-[#2cb5a7] focus:ring-4 focus:ring-[#2cb5a7]/12">
-            <option value="all">Semua Area</option>
-            {areas.map(itemArea => <option key={itemArea} value={itemArea}>{itemArea}</option>)}
-          </select>
-        </label>
-        <label className="relative block">
-          <ArrowUpDown size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0e8f85]" />
-          <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full min-h-[50px] rounded-2xl border border-primary/10 bg-white pl-10 pr-3 text-sm font-bold outline-none transition-all focus:border-[#2cb5a7] focus:ring-4 focus:ring-[#2cb5a7]/12">
-            <option value="featured">Featured dulu</option>
-            <option value="rating">Rating tertinggi</option>
-            <option value="price_asc">Harga terendah</option>
-            <option value="price_desc">Harga tertinggi</option>
-            <option value="newest">Terbaru</option>
-          </select>
-        </label>
+      {/* Filters */}
+      <section className="sticky top-16 z-40 bg-white/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <label className="relative flex-1">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <input
+                type="text"
+                placeholder="Cari nama, lokasi, atau tag..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-border rounded-lg bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+              />
+            </label>
+            <label className="relative">
+              <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <select value={area} onChange={e => setArea(e.target.value)} className="h-10 pl-8 pr-8 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all appearance-none">
+                <option value="all">Semua Area</option>
+                {areas.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+            <label className="relative">
+              <ArrowUpDown size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="h-10 pl-8 pr-8 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all appearance-none">
+                <option value="featured">Featured</option>
+                <option value="rating">Rating Tertinggi</option>
+                <option value="price_asc">Harga Terendah</option>
+                <option value="price_desc">Harga Tertinggi</option>
+                <option value="newest">Terbaru</option>
+              </select>
+            </label>
+          </div>
+        </div>
       </section>
 
-      {loading ? (
-        <div className="p-12 text-center text-muted font-bold">Memuat data...</div>
-      ) : filteredItems.length > 0 ? (
-        <div className="grid grid-cols-1 min-[390px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))] gap-4 sm:gap-5 p-3 sm:p-4 max-w-[1220px] mx-auto">
-          {filteredItems.map(item => (
-            <button key={item.id || item.name} type="button" onClick={() => setSelectedItem(item)} className="group flex w-full cursor-pointer flex-col overflow-hidden rounded-[22px] border border-primary/10 bg-white text-left shadow-[0_12px_30px_rgba(52,19,20,0.07)] transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/20 hover:shadow-[0_22px_46px_rgba(52,19,20,0.13)]">
-              <div className="relative overflow-hidden">
-                {item.photo ? (
-                  <img src={item.photo} alt={item.name} className="h-[205px] w-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                ) : (
-                  <div className="flex h-[205px] w-full items-center justify-center bg-gradient-to-br from-[#ffd8d3] to-[#c6f4ef] text-sm font-black text-[#8c232b]">No image</div>
-                )}
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/48 to-transparent" />
-                <div className="absolute left-3 bottom-3 flex flex-wrap items-center gap-2">
-                  {item.isFeatured && <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-black text-white">Featured</span>}
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/92 px-3 py-1.5 text-xs font-black text-[#58151c] shadow-sm">
-                    <Star size={13} className="fill-[#f5a623] text-[#f5a623]" />
-                    {item.rating || 0}
-                  </span>
+      {/* Content */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+        <p className="text-sm text-text-secondary font-medium mb-4">
+          {loading ? 'Memuat...' : `${filteredItems.length} tempat ditemukan`}
+        </p>
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-border overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-surface-alt" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-surface-alt rounded w-3/4" />
+                  <div className="h-3 bg-surface-alt rounded w-1/2" />
                 </div>
               </div>
-              <div className="flex flex-1 flex-col gap-3 p-4">
-                <div>
-                  <h3 className="font-display text-[1.35rem] font-bold leading-tight text-[#431417]">{item.name}</h3>
-                  <div className="mt-1 flex items-start gap-1.5 text-[0.82rem] font-bold text-[#8b4a4e]">
-                    <MapPin size={15} className="mt-0.5 shrink-0 text-[#0e8f85]" />
-                    <span className="leading-snug">{item.area} - {item.location}</span>
+            ))}
+          </div>
+        ) : filteredItems.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredItems.map(item => (
+              <button
+                key={item.id || item.name}
+                type="button"
+                onClick={() => setSelectedItem(item)}
+                className="group text-left bg-white rounded-2xl border border-border overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  {item.photo ? (
+                    <img src={item.photo} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full bg-surface-alt flex items-center justify-center text-sm text-muted">No image</div>
+                  )}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                    {item.isFeatured && <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-50/90 text-amber-700 backdrop-blur-sm">Featured</span>}
+                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-white/90 text-text-main backdrop-blur-sm">
+                      <Star size={11} className="fill-amber-500 text-amber-500" /> {item.rating || 0}
+                    </span>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full bg-[#fff0ed] px-3 py-1.5 font-black text-accent-dark">
-                    Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[#e9fbf8] px-3 py-1.5 font-black text-[#0e605b]">
-                    <Clock3 size={13} />
-                    {item.hours || '-'}
-                  </span>
-                  {item.itemCategory && <span className="rounded-full bg-[#f7f2ff] px-3 py-1.5 font-black text-[#5b3f91]">{item.itemCategory}</span>}
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{item.name}</h3>
+                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    <MapPin size={12} /> <span className="line-clamp-1">{item.area} · {item.location}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
+                      Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-text-secondary">
+                      <Clock3 size={11} /> {item.hours || '-'}
+                    </span>
+                    {item.itemCategory && <span className="text-xs text-muted bg-surface-alt px-2 py-0.5 rounded">{item.itemCategory}</span>}
+                  </div>
                 </div>
-                <div className="mt-auto flex flex-wrap gap-1.5">
-                  {item.tags?.slice(0, 3).map(tag => (
-                    <span key={tag} className="rounded-full bg-[#f7f7f4] px-2.5 py-1 text-[0.72rem] font-bold text-[#6b4b4e]">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="p-16 text-center text-sm font-bold text-gray-400">
-          {emptyText}
-        </div>
-      )}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-muted text-sm">{emptyText}</p>
+          </div>
+        )}
+      </section>
 
       <DirectoryModal item={selectedItem} onClose={() => setSelectedItem(null)} />
     </main>
@@ -173,47 +166,43 @@ function DirectoryModal({ item, onClose }) {
     { label: 'Google Maps', url: item.mapsUrl },
     { label: 'Instagram', url: item.instagram },
     { label: 'Booking', url: item.bookingUrl },
-    { label: item.secondaryLabel || 'Link Tambahan', url: item.secondaryUrl },
+    { label: item.secondaryLabel || 'Link', url: item.secondaryUrl },
   ].filter(link => link.url);
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-[#201113]/72 backdrop-blur-sm sm:items-center sm:p-4 modal-backdrop" onClick={onClose}>
-      <div className="relative max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-t-[24px] bg-white shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:max-h-[88vh] sm:rounded-[28px] modal-panel-bottom" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-2xl bg-black/42 text-white transition-colors hover:bg-black/60">
-          <X size={18} />
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[88vh] overflow-y-auto relative shadow-2xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors">
+          <X size={16} />
         </button>
         {item.photo ? (
-          <img src={item.photo} alt={item.name} className="h-[230px] w-full object-cover sm:h-[280px]" />
+          <img src={item.photo} alt={item.name} className="w-full h-52 sm:h-64 object-cover" />
         ) : (
-          <div className="flex h-[220px] w-full items-center justify-center bg-gradient-to-br from-[#ffd9d4] to-[#c6f4ef] text-sm font-black text-[#8c232b]">No image</div>
+          <div className="w-full h-44 bg-surface-alt flex items-center justify-center text-muted">No image</div>
         )}
-        <div className="grid gap-4 p-4 sm:p-6 modal-content">
+        <div className="p-5 sm:p-6 space-y-4 modal-content">
           <div>
-            <h2 className="font-display text-[clamp(1.8rem,4vw,2.45rem)] font-bold leading-none text-[#431417]">{item.name}</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-black text-[#431417] shadow-sm ring-1 ring-primary/10">
-                <Star size={14} className="fill-[#f5a623] text-[#f5a623]" />
-                {item.rating || 0} ({item.reviewCount || 0})
+            <h2 className="text-2xl font-bold text-text-main">{item.name}</h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 text-sm text-amber-600 font-medium">
+                <Star size={14} className="fill-amber-500 text-amber-500" /> {item.rating || 0} ({item.reviewCount || 0})
               </span>
-              {item.itemCategory && <span className="rounded-full bg-[#f7f2ff] px-3 py-1.5 text-xs font-black text-[#5b3f91]">{item.itemCategory}</span>}
-              {item.area && <span className="rounded-full bg-[#dff8f2] px-3 py-1.5 text-xs font-black text-[#0e605b]">{item.area}</span>}
+              {item.area && <span className="text-xs font-medium text-accent-light bg-accent/5 px-2 py-0.5 rounded">{item.area}</span>}
+              {item.itemCategory && <span className="text-xs text-muted bg-surface-alt px-2 py-0.5 rounded">{item.itemCategory}</span>}
             </div>
           </div>
-          <p className="rounded-2xl border border-primary/8 bg-[#fff8f6] p-4 text-sm font-bold leading-relaxed text-[#6f4749]">
-            {item.description || 'Belum ada deskripsi untuk tempat ini.'}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <p className="text-sm text-text-secondary leading-relaxed">{item.description || 'Belum ada deskripsi.'}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InfoBlock label="Lokasi" value={`${item.location || '-'}${item.area ? `, ${item.area}` : ''}`} />
             <InfoBlock label="Jam" value={item.hours || '-'} />
             <InfoBlock label="Harga" value={`Rp${((item.priceMin || 0) / 1000).toFixed(0)}k - Rp${((item.priceMax || 0) / 1000).toFixed(0)}k`} />
             <InfoBlock label="Tags" value={item.tags?.join(', ') || '-'} />
           </div>
           {links.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex flex-wrap gap-2">
               {links.map(link => (
-                <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-primary px-4 text-sm font-black text-white transition-colors hover:bg-accent-dark">
-                  <ExternalLink size={16} />
-                  {link.label}
+                <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 h-10 px-4 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors">
+                  <ExternalLink size={14} /> {link.label}
                 </a>
               ))}
             </div>
@@ -226,9 +215,9 @@ function DirectoryModal({ item, onClose }) {
 
 function InfoBlock({ label, value }) {
   return (
-    <div className="rounded-2xl border border-primary/8 bg-[#fff8f6] p-4">
-      <div className="mb-1 text-xs font-black uppercase tracking-wide text-[#0e8f85]">{label}</div>
-      <div className="text-sm font-bold text-[#341314]">{value}</div>
+    <div className="p-3 rounded-xl bg-surface-alt border border-border-light">
+      <div className="text-xs font-medium text-muted uppercase tracking-wide">{label}</div>
+      <div className="text-sm font-medium text-text-main mt-0.5">{value}</div>
     </div>
   );
 }

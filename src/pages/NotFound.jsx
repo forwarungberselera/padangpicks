@@ -5,27 +5,17 @@ function NotFound() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6">
       <div className="text-center max-w-md">
-        <div className="text-8xl font-black text-primary mb-2">404</div>
-        <h1 className="text-2xl font-black text-[#58151c] mb-3">
-          Halaman Tidak Ditemukan
-        </h1>
-        <p className="text-muted mb-8">
+        <div className="text-7xl font-bold text-primary/20 mb-4">404</div>
+        <h1 className="text-xl font-bold text-text-main mb-2">Halaman Tidak Ditemukan</h1>
+        <p className="text-sm text-text-secondary mb-8">
           Maaf, halaman yang kamu cari tidak ada atau sudah dipindahkan.
         </p>
         <div className="flex gap-3 justify-center">
-          <Link
-            to="/"
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-full hover:bg-accent-dark transition-colors text-sm"
-          >
-            <Home className="w-4 h-4" />
-            Ke Beranda
+          <Link to="/" className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors">
+            <Home size={15} /> Ke Beranda
           </Link>
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-text-main font-bold rounded-full hover:bg-gray-200 transition-colors text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Kembali
+          <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 h-10 px-5 text-sm font-semibold text-text-secondary bg-surface-alt rounded-lg hover:bg-border-light transition-colors">
+            <ArrowLeft size={15} /> Kembali
           </button>
         </div>
       </div>

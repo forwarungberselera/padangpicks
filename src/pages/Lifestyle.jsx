@@ -4,9 +4,8 @@ export default function Lifestyle() {
   return (
     <DirectoryPage
       table="lifestyle_places"
-      eyebrow="Lifestyle Directory"
       title="Lifestyle Padang"
-      description="Temukan spot wisata, kuliner, belanja, event, dan pengalaman lokal yang bisa dikurasi langsung dari dashboard admin."
+      description="Temukan spot wisata, kuliner, belanja, event, dan pengalaman lokal di Padang."
       emptyText="Belum ada lifestyle item yang tersedia."
     />
   );
