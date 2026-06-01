@@ -36,7 +36,7 @@ export default function Header() {
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2.5">
-              <img src="/harmonee-logo.svg" alt="Harmonee" className="h-9 w-9 rounded-xl" />
+              <img src="/harmonee-logo.png" alt="Harmonee" className="h-9 w-9 rounded-xl object-cover" />
               <span className="font-display text-xl text-primary tracking-tight">Harmonee</span>
             </Link>
 
