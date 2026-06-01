@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import CoffeeCard from '../components/CoffeeCard';
 import CoffeeModal from '../components/CoffeeModal';
@@ -7,6 +8,7 @@ import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
 import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
 
 export default function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -20,6 +22,19 @@ export default function Home() {
     setData(prev => prev.map(shop => shop.id === updatedShop.id ? updatedShop : shop));
     setSelectedShop(updatedShop);
   };
+
+  // Auto-open modal from shared link (?shop=Name)
+  useEffect(() => {
+    const shopName = searchParams.get('shop');
+    if (shopName && data.length > 0 && !selectedShop) {
+      const found = data.find(s => s.name.toLowerCase() === shopName.toLowerCase());
+      if (found) {
+        setSelectedShop(found);
+        // Clean up URL without reloading
+        setSearchParams({}, { replace: true });
+      }
+    }
+  }, [data, searchParams, selectedShop, setSearchParams]);
 
   useEffect(() => {
     const fetchData = async () => {
