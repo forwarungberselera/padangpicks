@@ -15,6 +15,8 @@ const Lifestyle = lazy(() => import('./pages/Lifestyle'));
 const Admin = lazy(() => import('./pages/Admin'));
 const Account = lazy(() => import('./pages/Account'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
                 <Route path="/lifestyle" element={<Lifestyle />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/account" element={<Account />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

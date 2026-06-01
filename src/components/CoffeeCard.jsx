@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Clock3, Heart, MapPin, Star } from 'lucide-react';
+import { Clock3, Heart, MapPin, Share2, Star } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import AuthModal from './AuthModal';
+import OptimizedImage from './OptimizedImage';
 
 export default function CoffeeCard({ shop, onClick }) {
   const { isFavorite, toggleFavorite, user } = useAuth();
@@ -14,6 +15,17 @@ export default function CoffeeCard({ shop, onClick }) {
     e.stopPropagation();
     if (!user || !shop.id) { setNoticeOpen(true); return; }
     toggleFavorite(shop.id);
+  };
+
+  const handleShare = (e) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/?shop=${encodeURIComponent(shop.name)}`;
+    const text = `Cek ${shop.name} di Harmonee! ${shop.area ? `(${shop.area})` : ''}`;
+    if (navigator.share) {
+      navigator.share({ title: shop.name, text, url }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url);
+    }
   };
 
   const getStatus = () => {
@@ -35,22 +47,27 @@ export default function CoffeeCard({ shop, onClick }) {
       >
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
-          {shop.photo ? (
-            <img src={shop.photo} alt={shop.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-          ) : (
-            <div className="w-full h-full bg-cream flex items-center justify-center text-sm text-muted">No image</div>
-          )}
+          <OptimizedImage src={shop.photo} alt={shop.name} className="w-full h-full" />
           
-          {/* Favorite button - large touch target */}
-          <button
-            onClick={handleFav}
-            className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 ${
-              isFav ? 'bg-primary text-cream' : 'bg-white/90 text-text-secondary backdrop-blur-sm'
-            }`}
-            aria-label="Toggle favorit"
-          >
-            <Heart size={18} className={isFav ? 'fill-current' : ''} />
-          </button>
+          {/* Favorite + Share buttons */}
+          <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+            <button
+              onClick={handleFav}
+              className={`w-10 h-10 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 ${
+                isFav ? 'bg-primary text-cream' : 'bg-white/90 text-text-secondary backdrop-blur-sm'
+              }`}
+              aria-label="Toggle favorit"
+            >
+              <Heart size={18} className={isFav ? 'fill-current' : ''} />
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-text-secondary backdrop-blur-sm shadow-md transition-all active:scale-90"
+              aria-label="Share"
+            >
+              <Share2 size={16} />
+            </button>
+          </div>
 
           {/* Status badges */}
           <div className="absolute bottom-3 left-3 flex items-center gap-1.5">

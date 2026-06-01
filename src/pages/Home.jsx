@@ -204,9 +204,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="text-center py-20">
-            <p className="text-muted text-sm">Tidak ada coffee shop yang cocok dengan filter.</p>
-            <button onClick={() => { setSearch(''); setArea('all'); setPrice('all'); }} className="mt-3 text-sm font-medium text-primary">
-              Reset filter
+            <div className="w-16 h-16 rounded-2xl bg-cream flex items-center justify-center mx-auto mb-4">
+              <Search size={28} className="text-primary/50" />
+            </div>
+            <h3 className="font-display text-lg text-primary mb-1">Tidak Ditemukan</h3>
+            <p className="text-sm text-muted max-w-xs mx-auto">Tidak ada coffee shop yang cocok dengan filter "{search || area}".</p>
+            <button onClick={() => { setSearch(''); setArea('all'); setPrice('all'); setSortBy('newest'); }} className="mt-4 h-10 px-5 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform">
+              Reset Semua Filter
             </button>
           </div>
         )}

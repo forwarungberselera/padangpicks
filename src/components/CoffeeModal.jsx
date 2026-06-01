@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, MapPin, Clock, Star, ExternalLink, Navigation, Camera } from 'lucide-react';
+import { X, MapPin, Clock, Star, Navigation, Camera, Share2, Copy, Check } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShop } from '../lib/coffee-shop-mapper';
@@ -34,6 +34,26 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
   };
 
   const hasLinks = shop.mapsUrl || shop.instagram;
+  const [copied, setCopied] = useState(false);
+
+  const shareUrl = `${window.location.origin}/?shop=${encodeURIComponent(shop.name)}`;
+  const shareText = `Cek ${shop.name} di Harmonee! ${shop.area ? `(${shop.area})` : ''}`;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: shop.name, text: shareText, url: shareUrl }); } catch {}
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  const handleWhatsAppShare = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`, '_blank');
+  };
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={onClose}>
@@ -50,10 +70,9 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
 
         {/* Image */}
         {shop.photo ? (
-          <img src={shop.photo} alt={shop.name} className="w-full h-52 sm:h-72 object-cover" />
-        ) : (
-          <div className="w-full h-44 sm:h-56 bg-cream flex items-center justify-center text-muted">No image</div>
-        )}
+          <img src={shop.photo} alt={shop.name} className="w-full h-52 sm:h-72 object-cover" onError={e => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }} />
+        ) : null}
+        {!shop.photo && <div className="w-full h-44 sm:h-56 bg-cream flex items-center justify-center text-muted">No image</div>}
 
         {/* Content */}
         <div className="p-5 sm:p-6 space-y-5 modal-content">
@@ -105,6 +124,21 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
               {ratingLoading && <span className="text-xs text-muted ml-1">Menyimpan...</span>}
             </div>
             {ratingStatus && <p className="mt-2.5 text-xs font-medium text-primary">{ratingStatus}</p>}
+          </div>
+
+          {/* Share buttons */}
+          <div className="flex gap-2">
+            <button onClick={handleWhatsAppShare} className="flex-1 h-12 inline-flex items-center justify-center gap-2 text-sm font-semibold text-emerald-700 bg-emerald-50 rounded-xl border border-emerald-100 active:scale-95 transition-transform">
+              <Share2 size={16} /> WhatsApp
+            </button>
+            <button onClick={handleCopyLink} className="flex-1 h-12 inline-flex items-center justify-center gap-2 text-sm font-semibold text-text-secondary bg-surface-alt rounded-xl border border-border active:scale-95 transition-transform">
+              {copied ? <><Check size={16} className="text-emerald-500" /> Tersalin!</> : <><Copy size={16} /> Salin Link</>}
+            </button>
+            {navigator.share && (
+              <button onClick={handleShare} className="h-12 w-12 flex items-center justify-center rounded-xl border border-border bg-surface-alt active:scale-95 transition-transform">
+                <Share2 size={18} className="text-text-secondary" />
+              </button>
+            )}
           </div>
 
           {/* Action Buttons - LARGE and prominent */}

@@ -104,7 +104,7 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
               </button>
             ))}
           </div>
-        ) : <div className="text-center py-20"><p className="text-muted text-sm">{emptyText}</p></div>}
+        ) : <div className="text-center py-20"><div className="w-16 h-16 rounded-2xl bg-cream flex items-center justify-center mx-auto mb-4"><Search size={28} className="text-primary/50" /></div><h3 className="font-display text-lg text-primary mb-1">{search ? 'Tidak Ditemukan' : 'Belum Ada Data'}</h3><p className="text-sm text-muted max-w-xs mx-auto">{search ? `Tidak ada hasil untuk "${search}".` : emptyText}</p>{search && <button onClick={() => { setSearch(''); setArea('all'); }} className="mt-4 h-10 px-5 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform">Reset Filter</button>}</div>}
       </section>
       <DirectoryModal item={selectedItem} onClose={() => setSelectedItem(null)} />
     </main>
