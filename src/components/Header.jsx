@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/auth-context';
 import AuthModal from './AuthModal';
-import { Coffee, Building2, LogOut, Menu, Shield, Sparkles, User, X } from 'lucide-react';
+import { Coffee, Building2, LogOut, Shield, Sparkles, User, X } from 'lucide-react';
 
 export default function Header() {
   const { user, isAdmin, logout } = useAuth();
@@ -11,9 +11,7 @@ export default function Header() {
   const menuRef = useRef(null);
   const location = useLocation();
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -28,9 +26,19 @@ export default function Header() {
     return name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('');
   };
 
+  // Bottom nav items - conditionally include Akun
+  const bottomNavItems = [
+    { to: '/', icon: Coffee, label: 'Coffee' },
+    { to: '/hotel', icon: Building2, label: 'Hotel' },
+    { to: '/lifestyle', icon: Sparkles, label: 'Lifestyle' },
+  ];
+  if (user) {
+    bottomNavItems.push({ to: '/account', icon: User, label: 'Akun' });
+  }
+
   return (
     <>
-      {/* Top header - desktop & mobile */}
+      {/* Top header */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-border safe-top">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14 sm:h-16">
@@ -99,13 +107,12 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - dynamic grid based on login state */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-border safe-bottom" aria-label="Navigasi mobile">
-        <div className="grid grid-cols-4 max-w-md mx-auto">
-          <MobileNavLink to="/" icon={Coffee} label="Coffee" />
-          <MobileNavLink to="/hotel" icon={Building2} label="Hotel" />
-          <MobileNavLink to="/lifestyle" icon={Sparkles} label="Lifestyle" />
-          <MobileNavLink to="/account" icon={User} label="Akun" />
+        <div className={`grid ${user ? 'grid-cols-4' : 'grid-cols-3'} max-w-md mx-auto`}>
+          {bottomNavItems.map(item => (
+            <MobileNavLink key={item.to} to={item.to} icon={item.icon} label={item.label} />
+          ))}
         </div>
       </nav>
 
@@ -120,9 +127,7 @@ function DesktopNavLink({ to, icon: Icon, label }) {
       to={to}
       className={({ isActive }) =>
         `flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl transition-all ${
-          isActive
-            ? 'text-primary bg-cream'
-            : 'text-text-secondary hover:text-primary hover:bg-surface-alt'
+          isActive ? 'text-primary bg-cream' : 'text-text-secondary hover:text-primary hover:bg-surface-alt'
         }`
       }
     >
@@ -137,15 +142,15 @@ function MobileNavLink({ to, icon: Icon, label }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+        `flex flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium transition-colors ${
           isActive ? 'text-primary' : 'text-muted'
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
-          <span>{label}</span>
+          <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+          <span className="mt-0.5">{label}</span>
         </>
       )}
     </NavLink>

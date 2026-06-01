@@ -63,14 +63,63 @@ export default function Home() {
   return (
     <main className="min-h-screen pb-20 md:pb-16">
       {/* Hero */}
-      <section className="bg-cream">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-14">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary leading-[1.1]">
-            Temukan tempat<br className="sm:hidden" /> ngopi favorit
-          </h1>
-          <p className="mt-3 text-sm sm:text-base text-text-secondary max-w-lg leading-relaxed">
-            Kurasi coffee shop dan cafe terbaik di Kota Padang, lengkap dengan rating komunitas.
-          </p>
+      <section className="bg-gradient-to-b from-cream to-cream-light overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-14 lg:py-16">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-12">
+            {/* Left content */}
+            <div className="flex-1 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-cream-dark text-xs font-semibold text-primary mb-4">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {data.length} tempat terkurasi
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-primary leading-[1.1]">
+                Spot ngopi & hangout terbaik di Padang
+              </h1>
+              <p className="mt-4 text-sm sm:text-base text-text-secondary leading-relaxed">
+                Kurasi coffee shop, cafe, dan tempat nongkrong pilihan dengan rating dari komunitas lokal.
+              </p>
+
+              {/* Quick area pills */}
+              {areas.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {areas.slice(0, 5).map(a => (
+                    <button
+                      key={a}
+                      onClick={() => { setArea(a); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                      className={`h-8 px-3.5 text-xs font-medium rounded-full border transition-all active:scale-95 ${
+                        area === a
+                          ? 'bg-primary text-cream border-primary'
+                          : 'bg-white text-text-secondary border-border hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                  {areas.length > 5 && (
+                    <span className="h-8 px-3 text-xs font-medium text-muted flex items-center">
+                      +{areas.length - 5} lagi
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right stats cards - desktop only */}
+            <div className="hidden lg:grid grid-cols-2 gap-3 w-[280px] shrink-0">
+              <StatCard emoji="☕" value={data.length} label="Coffee Shop" />
+              <StatCard emoji="⭐" value={data.filter(s => s.rating >= 4).length} label="Rating 4+" />
+              <StatCard emoji="💰" value={data.filter(s => s.priceCategory === 'budget').length} label="Budget" />
+              <StatCard emoji="🌙" value={data.filter(s => s.closeHour >= 22 || s.closeHour <= 2).length} label="Late Night" />
+            </div>
+
+            {/* Mobile stats row */}
+            <div className="lg:hidden flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+              <MiniStat emoji="☕" value={data.length} label="Tempat" />
+              <MiniStat emoji="⭐" value={data.filter(s => s.rating >= 4).length} label="Rating 4+" />
+              <MiniStat emoji="💰" value={data.filter(s => s.priceCategory === 'budget').length} label="Budget" />
+              <MiniStat emoji="🌙" value={data.filter(s => s.closeHour >= 22 || s.closeHour <= 2).length} label="Late Night" />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -177,5 +226,28 @@ export default function Home() {
         onShopUpdated={handleShopUpdated}
       />
     </main>
+  );
+}
+
+
+function StatCard({ emoji, value, label }) {
+  return (
+    <div className="rounded-2xl bg-white border border-border p-4 text-center">
+      <div className="text-2xl mb-1">{emoji}</div>
+      <div className="text-2xl font-bold text-primary">{value}</div>
+      <div className="text-xs text-muted font-medium mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function MiniStat({ emoji, value, label }) {
+  return (
+    <div className="shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white border border-border">
+      <span className="text-lg">{emoji}</span>
+      <div>
+        <div className="text-base font-bold text-primary leading-none">{value}</div>
+        <div className="text-[11px] text-muted font-medium mt-0.5">{label}</div>
+      </div>
+    </div>
   );
 }
