@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Building2, Coffee, Edit2, Image, Link as LinkIcon, MapPin, Plus, Save, Search, Shield, Sparkles, Star, Trash2, X } from 'lucide-react';
+import { Building2, Coffee, ChevronRight, Edit2, Eye, Image, Link as LinkIcon, MapPin, Plus, RefreshCw, Save, Search, Settings, Shield, Sparkles, Star, Trash2, X } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops, serializeCoffeeShop } from '../lib/coffee-shop-mapper.js';
@@ -8,13 +8,12 @@ import { normalizeCoffeeShops, serializeCoffeeShop } from '../lib/coffee-shop-ma
 const contentTypes = {
   coffee: { label: 'Coffee Shop', plural: 'Coffee Shops', table: 'coffee_shops', icon: Coffee, categoryOptions: ['Cafe', 'Coffee Shop', 'Bakery', 'Restaurant', 'Coworking'], emptyText: 'Belum ada coffee shop.' },
   hotel: { label: 'Hotel', plural: 'Hotels', table: 'hotels', icon: Building2, categoryOptions: ['Hotel', 'Resort', 'Homestay', 'Guest House', 'Villa'], emptyText: 'Belum ada hotel.' },
-  lifestyle: { label: 'Lifestyle', plural: 'Lifestyle', table: 'lifestyle_places', icon: Sparkles, categoryOptions: ['Wisata', 'Kuliner', 'Belanja', 'Event', 'Wellness', 'Culture'], emptyText: 'Belum ada lifestyle item.' },
+  lifestyle: { label: 'Lifestyle', plural: 'Lifestyle', table: 'lifestyle_places', icon: Sparkles, categoryOptions: ['Wisata', 'Kuliner', 'Belanja', 'Event', 'Wellness', 'Culture'], emptyText: 'Belum ada lifestyle.' },
 };
 
+
 const emptyFormData = { name: '', itemCategory: '', area: '', location: '', priceMin: '', priceMax: '', priceCategory: 'budget', openHour: '', closeHour: '', hours: '', tags: '', photo: '', description: '', mapsUrl: '', instagram: '', bookingUrl: '', secondaryUrl: '', secondaryLabel: '', rating: '', reviewCount: '', isFeatured: false };
-
-const defaultIntroSettings = { enabled: true, title: 'Selamat datang di PadangPicks', body: 'PadangPicks adalah direktori kurasi untuk menemukan coffee shop, hotel, dan lifestyle spot pilihan di Kota Padang.', buttonLabel: 'Mulai Jelajah' };
-
+const defaultIntroSettings = { enabled: true, title: 'Selamat datang di Harmonee', body: 'Harmonee adalah direktori kurasi untuk menemukan coffee shop, hotel, dan lifestyle spot pilihan di Kota Padang.', buttonLabel: 'Mulai Jelajah' };
 const toNumber = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
 
 export default function Admin() {
@@ -31,9 +30,11 @@ export default function Admin() {
   const [formData, setFormData] = useState(emptyFormData);
   const [introSettings, setIntroSettings] = useState(defaultIntroSettings);
   const [savingIntro, setSavingIntro] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
   const activeConfig = contentTypes[activeType];
-  const ActiveIcon = activeConfig.icon;
+
 
   const loadCounts = useCallback(async () => {
     if (!supabase) return;
@@ -79,6 +80,7 @@ export default function Admin() {
   const setField = (f, v) => setFormData(c => ({ ...c, [f]: v }));
   const setIntroField = (f, v) => setIntroSettings(c => ({ ...c, [f]: v }));
 
+
   const handleOpenModal = (item = null) => {
     if (item) {
       setEditingId(item.id);
@@ -91,8 +93,7 @@ export default function Admin() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!supabase) return;
+    e.preventDefault(); if (!supabase) return;
     setSaving(true); setStatus('');
     const payload = serializeCoffeeShop({ name: formData.name, itemCategory: formData.itemCategory, area: formData.area, location: formData.location, priceMin: toNumber(formData.priceMin), priceMax: toNumber(formData.priceMax), priceCategory: formData.priceCategory, openHour: toNumber(formData.openHour), closeHour: toNumber(formData.closeHour, 24), hours: formData.hours, tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [], photo: formData.photo, description: formData.description, mapsUrl: formData.mapsUrl, instagram: formData.instagram, bookingUrl: formData.bookingUrl, secondaryUrl: formData.secondaryUrl, secondaryLabel: formData.secondaryLabel, rating: toNumber(formData.rating), reviewCount: Math.max(0, Math.round(toNumber(formData.reviewCount))), isFeatured: formData.isFeatured });
     const request = editingId ? supabase.from(activeConfig.table).update(payload).eq('id', editingId) : supabase.from(activeConfig.table).insert([payload]);
@@ -110,54 +111,135 @@ export default function Admin() {
   };
 
   const handleIntroSubmit = async (e) => {
-    e.preventDefault();
-    if (!supabase) return;
+    e.preventDefault(); if (!supabase) return;
     setSavingIntro(true); setStatus('');
     const { error } = await supabase.from('app_settings').upsert({ key: 'intro_popup', value: introSettings, updated_at: new Date().toISOString() });
     setSavingIntro(false);
     setStatus(error ? `Gagal: ${error.message}` : 'Popup berhasil diperbarui.');
   };
 
+
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2 text-primary mb-1">
-            <Shield size={16} />
-            <span className="text-xs font-semibold uppercase tracking-wide">Admin Panel</span>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 pb-24 md:pb-12">
+      {/* Header with stats */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 text-primary mb-1">
+              <Shield size={16} />
+              <span className="text-xs font-semibold uppercase tracking-wide">Admin Panel</span>
+            </div>
+            <h1 className="font-display text-2xl sm:text-3xl text-primary">Kelola Harmonee</h1>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-main">Kelola PadangPicks</h1>
+          <button onClick={() => setShowSettings(!showSettings)} className="h-10 w-10 flex items-center justify-center rounded-xl border border-border bg-white hover:bg-surface-alt active:scale-95 transition-all">
+            <Settings size={18} className="text-text-secondary" />
+          </button>
         </div>
-        <button onClick={() => handleOpenModal()} className="h-10 px-5 inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors">
-          <Plus size={16} /> Tambah {activeConfig.label}
-        </button>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {Object.entries(contentTypes).map(([key, config]) => {
+            const Icon = config.icon;
+            const isActive = activeType === key;
+            return (
+              <button key={key} onClick={() => setActiveType(key)}
+                className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-2xl border transition-all active:scale-95 ${isActive ? 'bg-primary text-cream border-primary shadow-md' : 'bg-white text-text-secondary border-border hover:border-primary/30'}`}>
+                <Icon size={20} />
+                <span className="text-xl sm:text-2xl font-bold leading-none">{counts[key] || 0}</span>
+                <span className="text-[11px] font-medium opacity-80">{config.plural}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Category tabs */}
-      <div className="flex gap-1 p-1 bg-surface-alt rounded-lg w-fit mb-6">
-        {Object.entries(contentTypes).map(([key, config]) => {
-          const Icon = config.icon;
-          return (
-            <button key={key} onClick={() => setActiveType(key)} className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeType === key ? 'bg-white text-text-main shadow-sm' : 'text-muted hover:text-text-secondary'}`}>
-              <Icon size={15} /> {config.plural} <span className="text-xs text-muted ml-1">({counts[key] || 0})</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {status && <div className="mb-4 p-3 rounded-lg bg-surface-alt border border-border text-sm font-medium text-text-main">{status}</div>}
-
-      <div className="grid lg:grid-cols-[1fr_280px] gap-6">
-        {/* Table */}
-        <section className="bg-white rounded-2xl border border-border overflow-hidden">
-          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="font-semibold text-text-main">{activeConfig.plural}</h2>
-            <label className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-              <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari..." className="h-9 pl-8 pr-3 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all w-full sm:w-60" />
+      {/* Settings panel (toggleable) */}
+      {showSettings && (
+        <div className="mb-6 bg-white rounded-2xl border border-border p-5 animate-slideUp">
+          <h3 className="font-semibold text-base text-text-main mb-4 flex items-center gap-2"><Sparkles size={16} className="text-primary" />Pengaturan Popup</h3>
+          <form onSubmit={handleIntroSubmit} className="space-y-3">
+            <label className="flex items-center gap-3 p-3 rounded-xl bg-surface-alt border border-border-light">
+              <input type="checkbox" checked={introSettings.enabled} onChange={e => setIntroField('enabled', e.target.checked)} className="h-5 w-5 accent-primary rounded" />
+              <span className="text-sm font-medium text-text-main">Aktifkan popup intro</span>
             </label>
-          </div>
+            <Field label="Judul" value={introSettings.title} onChange={v => setIntroField('title', v)} />
+            <Field label="Isi" as="textarea" value={introSettings.body} onChange={v => setIntroField('body', v)} />
+            <Field label="Label Tombol" value={introSettings.buttonLabel} onChange={v => setIntroField('buttonLabel', v)} />
+            <button type="submit" disabled={savingIntro} className="w-full h-12 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60">
+              {savingIntro ? 'Menyimpan...' : 'Simpan Pengaturan'}
+            </button>
+          </form>
+        </div>
+      )}
+
+
+      {/* Search + Actions bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <label className="relative flex-1">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder={`Cari ${activeConfig.plural.toLowerCase()}...`}
+            className="w-full h-12 pl-10 pr-4 text-sm border border-border rounded-xl bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all" />
+          {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"><X size={16} /></button>}
+        </label>
+        <div className="flex gap-2">
+          <button onClick={() => loadData(activeType)} className="h-12 w-12 flex items-center justify-center rounded-xl border border-border bg-white active:scale-95 transition-transform" aria-label="Refresh">
+            <RefreshCw size={18} className={`text-text-secondary ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')} className="hidden sm:flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-white active:scale-95 transition-transform" aria-label="Toggle view">
+            <Eye size={18} className="text-text-secondary" />
+          </button>
+          <button onClick={() => handleOpenModal()} className="h-12 px-5 inline-flex items-center gap-2 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform shadow-sm">
+            <Plus size={18} /> <span className="hidden sm:inline">Tambah</span> {activeConfig.label}
+          </button>
+        </div>
+      </div>
+
+      {status && <div className="mb-4 p-3.5 rounded-xl bg-cream border border-cream-dark text-sm font-medium text-primary animate-slideUp">{status}</div>}
+
+      {/* Content: Card view (mobile default) or Table view */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-28 rounded-2xl bg-surface-alt animate-pulse" />)}
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl border border-border">
+          <p className="text-muted text-sm">{search ? 'Tidak ditemukan.' : activeConfig.emptyText}</p>
+          {!search && <button onClick={() => handleOpenModal()} className="mt-3 text-sm font-medium text-primary">+ Tambah {activeConfig.label}</button>}
+        </div>
+      ) : viewMode === 'cards' || window.innerWidth < 640 ? (
+        /* Card view - great for mobile */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredItems.map(item => (
+            <div key={item.id} className="bg-white rounded-2xl border border-border overflow-hidden hover:shadow-md transition-shadow">
+              <div className="flex gap-3 p-3.5">
+                {item.photo ? <img src={item.photo} alt="" className="h-16 w-16 rounded-xl object-cover shrink-0" /> : <div className="h-16 w-16 rounded-xl bg-cream flex items-center justify-center shrink-0"><Image size={20} className="text-primary/40" /></div>}
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-semibold text-sm text-text-main truncate">{item.name}</h4>
+                  <p className="text-xs text-muted truncate mt-0.5">{item.area} · {item.itemCategory || '-'}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <span className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-600"><Star size={11} className="fill-amber-500 text-amber-500" />{item.rating || 0}</span>
+                    <span className="text-xs text-muted">Rp{((item.priceMin||0)/1000).toFixed(0)}k</span>
+                    {item.isFeatured && <span className="text-[10px] font-semibold text-primary bg-cream px-1.5 py-0.5 rounded">Featured</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex border-t border-border-light">
+                <button onClick={() => handleOpenModal(item)} className="flex-1 flex items-center justify-center gap-1.5 h-11 text-xs font-medium text-blue-600 hover:bg-blue-50 active:bg-blue-100 transition-colors">
+                  <Edit2 size={14} /> Edit
+                </button>
+                <div className="w-px bg-border-light" />
+                <button onClick={() => handleDelete(item.id, item.name)} className="flex-1 flex items-center justify-center gap-1.5 h-11 text-xs font-medium text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors">
+                  <Trash2 size={14} /> Hapus
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+
+
+        /* Table view - desktop */
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-surface-alt border-b border-border text-xs font-medium text-muted uppercase tracking-wide">
@@ -171,37 +253,25 @@ export default function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
-                  <tr><td colSpan="6" className="px-4 py-8 text-center text-muted">Memuat...</td></tr>
-                ) : filteredItems.length === 0 ? (
-                  <tr><td colSpan="6" className="px-4 py-8 text-center text-muted">{activeConfig.emptyText}</td></tr>
-                ) : filteredItems.map(item => (
+                {filteredItems.map(item => (
                   <tr key={item.id} className="border-b border-border-light hover:bg-surface-alt/50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {item.photo ? <img src={item.photo} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="h-10 w-10 rounded-lg bg-surface-alt flex items-center justify-center"><Image size={14} className="text-muted" /></div>}
+                        {item.photo ? <img src={item.photo} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="h-10 w-10 rounded-lg bg-cream flex items-center justify-center"><Image size={14} className="text-primary/40" /></div>}
                         <div className="min-w-0">
-                          <div className="font-medium text-text-main truncate max-w-[180px]">{item.name}</div>
-                          <div className="text-xs text-muted truncate max-w-[180px]">{item.location || '-'}</div>
+                          <div className="font-medium text-text-main truncate max-w-[200px]">{item.name}</div>
+                          <div className="text-xs text-muted truncate max-w-[200px]">{item.location || '-'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-text-secondary">{item.itemCategory || '-'}</td>
                     <td className="px-4 py-3 text-text-secondary">{item.area || '-'}</td>
-                    <td className="px-4 py-3 font-medium">Rp{((item.priceMin || 0) / 1000).toFixed(0)}k</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
-                        <Star size={12} className="fill-amber-500 text-amber-500" /> {item.rating || 0}
-                      </span>
-                    </td>
+                    <td className="px-4 py-3 font-medium">Rp{((item.priceMin||0)/1000).toFixed(0)}k - {((item.priceMax||0)/1000).toFixed(0)}k</td>
+                    <td className="px-4 py-3"><span className="inline-flex items-center gap-1 text-amber-600 font-medium"><Star size={12} className="fill-amber-500 text-amber-500" />{item.rating || 0}</span></td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center gap-1.5">
-                        <button onClick={() => handleOpenModal(item)} className="h-8 w-8 flex items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" aria-label="Edit">
-                          <Edit2 size={14} />
-                        </button>
-                        <button onClick={() => handleDelete(item.id, item.name)} className="h-8 w-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors" aria-label="Hapus">
-                          <Trash2 size={14} />
-                        </button>
+                        <button onClick={() => handleOpenModal(item)} className="h-9 w-9 flex items-center justify-center rounded-lg text-blue-600 hover:bg-blue-50 transition-colors"><Edit2 size={15} /></button>
+                        <button onClick={() => handleDelete(item.id, item.name)} className="h-9 w-9 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -209,90 +279,90 @@ export default function Admin() {
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
+      )}
 
-        {/* Sidebar */}
-        <aside className="space-y-4">
-          {/* Intro Popup Settings */}
-          <form onSubmit={handleIntroSubmit} className="bg-white rounded-2xl border border-border p-5">
-            <h3 className="font-semibold text-sm text-text-main mb-3 flex items-center gap-2">
-              <Sparkles size={14} className="text-primary" /> Popup Awal
-            </h3>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2.5 text-sm">
-                <input type="checkbox" checked={introSettings.enabled} onChange={e => setIntroField('enabled', e.target.checked)} className="h-4 w-4 accent-primary rounded" />
-                <span className="font-medium text-text-main">Aktifkan popup</span>
-              </label>
-              <Field label="Judul" value={introSettings.title} onChange={v => setIntroField('title', v)} />
-              <Field label="Isi" as="textarea" value={introSettings.body} onChange={v => setIntroField('body', v)} />
-              <Field label="Label Tombol" value={introSettings.buttonLabel} onChange={v => setIntroField('buttonLabel', v)} />
-              <button type="submit" disabled={savingIntro} className="w-full h-9 text-sm font-semibold text-white bg-accent rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-60">
-                <span className="flex items-center justify-center gap-1.5"><Save size={13} /> {savingIntro ? 'Menyimpan...' : 'Simpan'}</span>
-              </button>
-            </div>
-          </form>
-        </aside>
-      </div>
+      {/* Results count */}
+      <p className="text-xs text-muted text-center mt-4">{filteredItems.length} dari {items.length} {activeConfig.plural.toLowerCase()}</p>
 
-      {/* Form Modal */}
+
+      {/* Form Modal - Full screen on mobile */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4 modal-backdrop">
-          <div className="relative w-full max-w-3xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl modal-panel-bottom">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:bg-surface-alt transition-colors"><X size={18} /></button>
-
-            <div className="mb-5 pr-10">
-              <h3 className="text-xl font-bold text-text-main">{editingId ? 'Edit' : 'Tambah'} {activeConfig.label}</h3>
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={() => setIsModalOpen(false)}>
+          <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative shadow-2xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
+            {/* Mobile drag handle */}
+            <div className="sm:hidden sticky top-0 z-10 pt-3 pb-2 bg-white rounded-t-2xl">
+              <div className="w-10 h-1 bg-border rounded-full mx-auto" />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 modal-content">
+            {/* Header */}
+            <div className="sticky top-0 sm:top-0 z-10 bg-white border-b border-border-light px-5 py-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-display text-lg text-primary">{editingId ? 'Edit' : 'Tambah'} {activeConfig.label}</h3>
+                <p className="text-xs text-muted mt-0.5">{editingId ? 'Perbarui data listing' : 'Isi form untuk menambahkan listing baru'}</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-alt text-muted hover:text-text-main transition-colors"><X size={18} /></button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-5">
+              {/* Photo preview */}
+              {formData.photo && (
+                <div className="rounded-2xl overflow-hidden border border-border">
+                  <img src={formData.photo} alt="Preview" className="w-full h-40 object-cover" onError={e => { e.target.style.display = 'none'; }} />
+                </div>
+              )}
+
               {/* Identity */}
-              <fieldset className="space-y-3 p-4 rounded-xl bg-surface-alt border border-border-light">
-                <legend className="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1.5 px-1"><MapPin size={12} /> Identitas</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Nama Tempat" required value={formData.name} onChange={v => setField('name', v)} />
+              <FormSection title="Identitas" icon={MapPin}>
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                  <Field label="Nama Tempat" required value={formData.name} onChange={v => setField('name', v)} placeholder="Nama coffee shop / hotel" />
                   <SelectField label="Kategori" value={formData.itemCategory} onChange={v => setField('itemCategory', v)} options={activeConfig.categoryOptions} />
                   <Field label="Area" required value={formData.area} onChange={v => setField('area', v)} placeholder="Padang Barat" />
-                  <Field label="Alamat" required value={formData.location} onChange={v => setField('location', v)} />
+                  <Field label="Alamat Lengkap" required value={formData.location} onChange={v => setField('location', v)} placeholder="Jl. ..." />
                 </div>
-                <Field label="Deskripsi" as="textarea" value={formData.description} onChange={v => setField('description', v)} />
-              </fieldset>
+                <Field label="Deskripsi" as="textarea" value={formData.description} onChange={v => setField('description', v)} placeholder="Deskripsi singkat tempat ini..." />
+              </FormSection>
 
               {/* Pricing & Hours */}
-              <fieldset className="space-y-3 p-4 rounded-xl bg-surface-alt border border-border-light">
-                <legend className="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1.5 px-1"><Star size={12} /> Harga & Jam</legend>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Field label="Harga Min" type="number" required value={formData.priceMin} onChange={v => setField('priceMin', v)} />
-                  <Field label="Harga Max" type="number" required value={formData.priceMax} onChange={v => setField('priceMax', v)} />
-                  <SelectField label="Level" value={formData.priceCategory} onChange={v => setField('priceCategory', v)} options={['budget', 'mid', 'premium']} />
-                  <Field label="Jam Buka" type="number" step="0.5" required value={formData.openHour} onChange={v => setField('openHour', v)} />
-                  <Field label="Jam Tutup" type="number" step="0.5" required value={formData.closeHour} onChange={v => setField('closeHour', v)} />
+              <FormSection title="Harga & Jam" icon={Star}>
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+                  <Field label="Harga Min (Rp)" type="number" required value={formData.priceMin} onChange={v => setField('priceMin', v)} placeholder="15000" />
+                  <Field label="Harga Max (Rp)" type="number" required value={formData.priceMax} onChange={v => setField('priceMax', v)} placeholder="50000" />
+                  <SelectField label="Level Harga" value={formData.priceCategory} onChange={v => setField('priceCategory', v)} options={['budget', 'mid', 'premium']} />
+                  <Field label="Jam Buka" type="number" step="0.5" required value={formData.openHour} onChange={v => setField('openHour', v)} placeholder="8" />
+                  <Field label="Jam Tutup" type="number" step="0.5" required value={formData.closeHour} onChange={v => setField('closeHour', v)} placeholder="22" />
                   <Field label="Teks Jam" required value={formData.hours} onChange={v => setField('hours', v)} placeholder="08.00 - 22.00" />
-                  <Field label="Rating" type="number" step="0.1" min="0" max="5" value={formData.rating} onChange={v => setField('rating', v)} />
-                  <Field label="Ulasan" type="number" min="0" value={formData.reviewCount} onChange={v => setField('reviewCount', v)} />
-                  <label className="flex items-center gap-2.5 h-10 mt-auto text-sm font-medium text-text-main">
-                    <input type="checkbox" checked={formData.isFeatured} onChange={e => setField('isFeatured', e.target.checked)} className="h-4 w-4 accent-primary rounded" />
+                </div>
+                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+                  <Field label="Rating" type="number" step="0.1" min="0" max="5" value={formData.rating} onChange={v => setField('rating', v)} placeholder="4.5" />
+                  <Field label="Jumlah Ulasan" type="number" min="0" value={formData.reviewCount} onChange={v => setField('reviewCount', v)} placeholder="0" />
+                  <label className="flex items-center gap-3 h-12 mt-auto px-3 rounded-xl bg-surface-alt border border-border-light text-sm font-medium text-text-main cursor-pointer">
+                    <input type="checkbox" checked={formData.isFeatured} onChange={e => setField('isFeatured', e.target.checked)} className="h-5 w-5 accent-primary rounded" />
                     Featured
                   </label>
                 </div>
-              </fieldset>
+              </FormSection>
+
 
               {/* Media & Links */}
-              <fieldset className="space-y-3 p-4 rounded-xl bg-surface-alt border border-border-light">
-                <legend className="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1.5 px-1"><LinkIcon size={12} /> Media & Link</legend>
-                <Field label="Tags (koma)" value={formData.tags} onChange={v => setField('tags', v)} placeholder="Wi-Fi, Cozy, Outdoor" />
-                <Field label="URL Foto" type="url" value={formData.photo} onChange={v => setField('photo', v)} />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Google Maps" type="url" value={formData.mapsUrl} onChange={v => setField('mapsUrl', v)} />
-                  <Field label="Instagram" type="url" value={formData.instagram} onChange={v => setField('instagram', v)} />
-                  <Field label="Booking URL" type="url" value={formData.bookingUrl} onChange={v => setField('bookingUrl', v)} />
+              <FormSection title="Media & Link" icon={LinkIcon}>
+                <Field label="Tags (pisahkan koma)" value={formData.tags} onChange={v => setField('tags', v)} placeholder="Wi-Fi, Cozy, Outdoor, Live Music" />
+                <Field label="URL Foto" type="url" value={formData.photo} onChange={v => setField('photo', v)} placeholder="https://..." />
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                  <Field label="Google Maps URL" type="url" value={formData.mapsUrl} onChange={v => setField('mapsUrl', v)} placeholder="https://maps.google.com/..." />
+                  <Field label="Instagram URL" type="url" value={formData.instagram} onChange={v => setField('instagram', v)} placeholder="https://instagram.com/..." />
+                  <Field label="Booking / Reservasi URL" type="url" value={formData.bookingUrl} onChange={v => setField('bookingUrl', v)} />
                   <Field label="URL Tambahan" type="url" value={formData.secondaryUrl} onChange={v => setField('secondaryUrl', v)} />
-                  <Field label="Label URL Tambahan" value={formData.secondaryLabel} onChange={v => setField('secondaryLabel', v)} />
                 </div>
-              </fieldset>
+                <Field label="Label URL Tambahan" value={formData.secondaryLabel} onChange={v => setField('secondaryLabel', v)} placeholder="Website, Menu, dll" />
+              </FormSection>
 
-              <button type="submit" disabled={saving} className="w-full h-11 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-60">
-                <span className="flex items-center justify-center gap-2"><Save size={15} /> {saving ? 'Menyimpan...' : 'Simpan'}</span>
-              </button>
+              {/* Submit button - sticky on mobile */}
+              <div className="sticky bottom-0 bg-white pt-3 pb-2 -mx-5 px-5 border-t border-border-light sm:static sm:border-0 sm:p-0">
+                <button type="submit" disabled={saving} className="w-full h-14 text-base font-semibold text-cream bg-primary rounded-2xl active:scale-[0.97] transition-transform disabled:opacity-60 shadow-sm">
+                  <span className="flex items-center justify-center gap-2"><Save size={18} />{saving ? 'Menyimpan...' : (editingId ? 'Update' : 'Simpan')}</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -301,13 +371,27 @@ export default function Admin() {
   );
 }
 
+
+function FormSection({ title, icon: Icon, children }) {
+  return (
+    <div className="space-y-3">
+      <h4 className="text-xs font-semibold text-primary uppercase tracking-wide flex items-center gap-1.5">
+        <Icon size={13} /> {title}
+      </h4>
+      <div className="space-y-3 p-4 rounded-2xl bg-surface-alt border border-border-light">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, value, onChange, as, ...props }) {
-  const cls = 'w-full h-10 px-3 text-sm border border-border rounded-lg bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all';
+  const cls = 'w-full h-12 px-4 text-sm border border-border rounded-xl bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all';
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-text-secondary mb-1">{label}</span>
+      <span className="block text-xs font-medium text-text-secondary mb-1.5">{label}</span>
       {as === 'textarea' ? (
-        <textarea rows="3" value={value} onChange={e => onChange(e.target.value)} className={`${cls} h-auto py-2`} {...props} />
+        <textarea rows="3" value={value} onChange={e => onChange(e.target.value)} className={`${cls} h-auto py-3`} {...props} />
       ) : (
         <input value={value} onChange={e => onChange(e.target.value)} className={cls} {...props} />
       )}
@@ -318,8 +402,8 @@ function Field({ label, value, onChange, as, ...props }) {
 function SelectField({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-text-secondary mb-1">{label}</span>
-      <select value={value} onChange={e => onChange(e.target.value)} className="w-full h-10 px-3 text-sm border border-border rounded-lg bg-white focus:border-primary outline-none transition-all">
+      <span className="block text-xs font-medium text-text-secondary mb-1.5">{label}</span>
+      <select value={value} onChange={e => onChange(e.target.value)} className="w-full h-12 px-4 text-sm border border-border rounded-xl bg-white focus:border-primary outline-none transition-all">
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </label>
