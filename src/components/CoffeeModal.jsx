@@ -9,6 +9,7 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
   const [userRating, setUserRating] = useState(0);
   const [ratingStatus, setRatingStatus] = useState('');
   const [ratingLoading, setRatingLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setUserRating(0); setRatingStatus('');
@@ -34,7 +35,6 @@ export default function CoffeeModal({ shop, isOpen, onClose, onShopUpdated }) {
   };
 
   const hasLinks = shop.mapsUrl || shop.instagram;
-  const [copied, setCopied] = useState(false);
 
   const shareUrl = `${window.location.origin}/?shop=${encodeURIComponent(shop.name)}`;
   const shareText = `Cek ${shop.name} di Harmonee! ${shop.area ? `(${shop.area})` : ''}`;
