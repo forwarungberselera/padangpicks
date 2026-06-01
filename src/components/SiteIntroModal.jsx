@@ -35,7 +35,7 @@ export default function SiteIntroModal() {
         <button type="button" onClick={closeIntro} className="absolute right-4 top-4 z-10 w-8 h-8 flex items-center justify-center rounded-lg text-muted hover:text-text-main hover:bg-surface-alt transition-colors"><X size={18} /></button>
         <div className="p-6 sm:p-8 text-center">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-cream flex items-center justify-center mb-5 modal-icon">
-            <img src="/harmonee-logo.svg" alt="" className="w-10 h-10" />
+            <img src="/harmonee-logo.png" alt="" className="w-10 h-10 rounded-lg object-cover" />
           </div>
           <h2 className="font-display text-2xl text-primary leading-tight mb-3">{intro.title}</h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-6">{intro.body}</p>
