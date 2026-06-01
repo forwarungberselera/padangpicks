@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import BackToTop from './components/BackToTop';
 import Header from './components/Header';
 import SiteIntroModal from './components/SiteIntroModal';
 import PageSkeleton from './components/LoadingSkeleton';
@@ -25,6 +26,7 @@ function App() {
         <ToastProvider>
           <Router>
             <ScrollToTop />
+            <BackToTop />
             <Header />
             <SiteIntroModal />
             <Suspense fallback={<PageSkeleton />}>

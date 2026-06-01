@@ -3,9 +3,12 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import CoffeeCard from '../components/CoffeeCard';
 import CoffeeModal from '../components/CoffeeModal';
+import Footer from '../components/Footer';
+import SuggestPlaceModal from '../components/SuggestPlaceModal';
+import { useRecentlyViewed } from '../hooks/useRecentlyViewed';
 import { coffeeShops as fallbackData } from '../lib/coffee-data.js';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
-import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X, Plus, Clock3, Star } from 'lucide-react';
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -17,6 +20,13 @@ export default function Home() {
   const [sortBy, setSortBy] = useState('newest');
   const [selectedShop, setSelectedShop] = useState(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const { recentlyViewed, addItem: addRecentlyViewed } = useRecentlyViewed();
+
+  const handleSelectShop = (shop) => {
+    setSelectedShop(shop);
+    addRecentlyViewed(shop);
+  };
 
   const handleShopUpdated = (updatedShop) => {
     setData(prev => prev.map(shop => shop.id === updatedShop.id ? updatedShop : shop));
@@ -29,8 +39,7 @@ export default function Home() {
     if (shopName && data.length > 0 && !selectedShop) {
       const found = data.find(s => s.name.toLowerCase() === shopName.toLowerCase());
       if (found) {
-        setSelectedShop(found);
-        // Clean up URL without reloading
+        handleSelectShop(found);
         setSearchParams({}, { replace: true });
       }
     }
@@ -63,6 +72,14 @@ export default function Home() {
     if (area !== 'all') result = result.filter(shop => shop.area === area);
     if (price !== 'all') result = result.filter(shop => shop.priceCategory === price);
     result.sort((a, b) => {
+      if (sortBy === 'open_now') {
+        const now = new Date();
+        const h = now.getHours() + now.getMinutes() / 60;
+        const isOpenA = a.openHour < a.closeHour ? (h >= a.openHour && h < a.closeHour) : (h >= a.openHour || h < a.closeHour);
+        const isOpenB = b.openHour < b.closeHour ? (h >= b.openHour && h < b.closeHour) : (h >= b.openHour || h < b.closeHour);
+        if (isOpenA !== isOpenB) return isOpenA ? -1 : 1;
+        return (b.rating || 0) - (a.rating || 0);
+      }
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       if (sortBy === 'reviews') return (b.reviewCount || 0) - (a.reviewCount || 0);
       if (sortBy === 'price_asc') return (a.priceMin || 0) - (b.priceMin || 0);
@@ -184,6 +201,7 @@ export default function Home() {
             </select>
             <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="h-10 px-3 pr-8 text-sm border border-border rounded-xl bg-white focus:border-primary outline-none transition-all appearance-none">
               <option value="newest">Terbaru</option>
+              <option value="open_now">Sedang Buka</option>
               <option value="rating">Rating Tertinggi</option>
               <option value="price_asc">Harga Terendah</option>
               <option value="price_desc">Harga Tertinggi</option>
@@ -194,6 +212,40 @@ export default function Home() {
 
       {/* Results */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-5">
+        {/* Recently Viewed */}
+        {!search && area === 'all' && recentlyViewed.length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-text-main flex items-center gap-1.5"><Clock3 size={14} className="text-muted" />Terakhir Dilihat</h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+              {recentlyViewed.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    const found = data.find(s => (s.id || s.name) === item.id);
+                    if (found) handleSelectShop(found);
+                  }}
+                  className="shrink-0 w-36 bg-white rounded-xl border border-border overflow-hidden hover:shadow-sm active:scale-[0.97] transition-all text-left"
+                >
+                  {item.photo ? (
+                    <img src={item.photo} alt={item.name} className="w-full h-20 object-cover" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-20 bg-cream" />
+                  )}
+                  <div className="p-2.5">
+                    <div className="text-xs font-semibold text-text-main line-clamp-1">{item.name}</div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Star size={10} className="fill-amber-500 text-amber-500" />
+                      <span className="text-[10px] text-muted">{item.rating} · {item.area}</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="text-sm text-muted font-medium mb-4">
           {loading ? 'Memuat...' : `${filteredData.length} tempat ditemukan`}
         </p>
@@ -214,7 +266,7 @@ export default function Home() {
         ) : filteredData.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredData.map(shop => (
-              <CoffeeCard key={shop.id || shop.name} shop={shop} onClick={setSelectedShop} />
+              <CoffeeCard key={shop.id || shop.name} shop={shop} onClick={handleSelectShop} />
             ))}
           </div>
         ) : (
@@ -231,12 +283,20 @@ export default function Home() {
         )}
       </section>
 
-      {/* Footer */}
-      <footer className="max-w-6xl mx-auto px-4 sm:px-6 mt-12 pt-6 border-t border-border">
-        <p className="text-center text-xs text-muted pb-6">
-          &copy; {new Date().getFullYear()} Harmonee. Dibuat dengan cinta di Kota Padang.
-        </p>
-      </footer>
+      {/* Suggest CTA */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-10">
+        <div className="rounded-2xl bg-cream border border-cream-dark p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 className="font-display text-lg text-primary">Punya rekomendasi tempat?</h3>
+            <p className="text-sm text-text-secondary mt-1">Bantu kami menemukan spot tersembunyi di Padang.</p>
+          </div>
+          <button onClick={() => setSuggestOpen(true)} className="h-12 px-6 inline-flex items-center justify-center gap-2 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform shrink-0">
+            <Plus size={16} /> Suggest Tempat
+          </button>
+        </div>
+      </section>
+
+      <Footer />
 
       <CoffeeModal
         shop={selectedShop}
@@ -244,6 +304,7 @@ export default function Home() {
         onClose={() => setSelectedShop(null)}
         onShopUpdated={handleShopUpdated}
       />
+      <SuggestPlaceModal isOpen={suggestOpen} onClose={() => setSuggestOpen(false)} />
     </main>
   );
 }

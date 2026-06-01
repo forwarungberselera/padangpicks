@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Heart, Lock, Mail, Save, Star, User } from 'lucide-react';
+import { Heart, Lock, Mail, Save, Star, Trash2, User, AlertTriangle } from 'lucide-react';
 import CoffeeModal from '../components/CoffeeModal';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
@@ -121,6 +121,36 @@ function AccountContent({ user, favoriteIds }) {
                 </div>
               ))}</div>
             )}
+          </section>
+
+          {/* Delete Account */}
+          <section className="bg-white rounded-2xl border border-red-100 p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                <AlertTriangle size={18} className="text-red-500" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-semibold text-base text-text-main">Hapus Akun</h2>
+                <p className="text-xs text-muted mt-1 leading-relaxed">Semua data termasuk favorit dan rating akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</p>
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('Yakin ingin menghapus akun? Semua data akan hilang permanen.')) return;
+                    if (!window.confirm('Ini TIDAK bisa dibatalkan. Lanjutkan hapus akun?')) return;
+                    if (!supabase) return;
+                    // Delete user data first
+                    await supabase.from('favorites').delete().eq('user_id', user.id);
+                    await supabase.from('coffee_shop_ratings').delete().eq('user_id', user.id);
+                    await supabase.from('user_roles').delete().eq('user_id', user.id);
+                    // Sign out (actual user deletion requires admin API or edge function)
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
+                  }}
+                  className="mt-3 h-10 px-4 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 active:scale-95 transition-all"
+                >
+                  <span className="flex items-center gap-1.5"><Trash2 size={13} /> Hapus Akun Saya</span>
+                </button>
+              </div>
+            </div>
           </section>
         </div>
       </main>
