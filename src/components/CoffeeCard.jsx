@@ -1,26 +1,31 @@
 import { useCallback, useState } from 'react';
-import { Clock3, Heart, MapPin, Share2, Star } from 'lucide-react';
+import { Clock3, Heart, MapPin, Share2, Star, Check } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import AuthModal from './AuthModal';
 import OptimizedImage from './OptimizedImage';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
-export default function CoffeeCard({ shop, onClick }) {
+export default function CoffeeCard({ shop, onClick, itemType = 'coffee_shop' }) {
   const { isFavorite, toggleFavorite, user } = useAuth();
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
-  const isFav = isFavorite(shop.id);
+  const isFav = isFavorite(shop.id, itemType);
 
   const handleCloseNotice = useCallback(() => setNoticeOpen(false), []);
   useModalHistory(noticeOpen, handleCloseNotice);
   useBodyScrollLock(noticeOpen);
 
-  const handleFav = (e) => {
+  const handleFav = async (e) => {
     e.stopPropagation();
     if (!user || !shop.id) { setNoticeOpen(true); return; }
-    toggleFavorite(shop.id);
+    if (favLoading) return;
+    setFavLoading(true);
+    await toggleFavorite(shop.id, itemType);
+    setFavLoading(false);
   };
 
   const handleShare = (e) => {
@@ -30,7 +35,10 @@ export default function CoffeeCard({ shop, onClick }) {
     if (navigator.share) {
       navigator.share({ title: shop.name, text, url }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(url);
+      navigator.clipboard.writeText(url).then(() => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      });
     }
   };
 
@@ -59,19 +67,23 @@ export default function CoffeeCard({ shop, onClick }) {
           <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5">
             <button
               onClick={handleFav}
-              className={`w-11 h-11 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 ${
+              disabled={favLoading}
+              className={`w-11 h-11 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 disabled:opacity-60 ${
                 isFav ? 'bg-primary text-cream' : 'bg-white/90 text-text-secondary backdrop-blur-sm'
               }`}
               aria-label={isFav ? 'Hapus dari favorit' : 'Tambah ke favorit'}
             >
-              <Heart size={18} className={isFav ? 'fill-current' : ''} />
+              {favLoading
+                ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                : <Heart size={18} className={isFav ? 'fill-current' : ''} />
+              }
             </button>
             <button
               onClick={handleShare}
               className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 text-text-secondary backdrop-blur-sm shadow-md transition-all active:scale-90"
               aria-label="Bagikan"
             >
-              <Share2 size={16} />
+              {shareCopied ? <Check size={16} className="text-emerald-500" /> : <Share2 size={16} />}
             </button>
           </div>
 

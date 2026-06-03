@@ -22,28 +22,28 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-6">
-          <div className="bg-white rounded-[22px] shadow-xl p-8 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-primary" />
+        <div className="min-h-screen flex items-center justify-center p-6 bg-cream-light">
+          <div className="bg-white rounded-2xl border border-border shadow-lg p-8 max-w-md w-full text-center">
+            <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <AlertTriangle size={26} className="text-accent" />
             </div>
-            <h2 className="text-xl font-black text-[#58151c] mb-2">
+            <h2 className="font-display text-xl text-primary mb-2">
               Oops! Terjadi Kesalahan
             </h2>
-            <p className="text-muted mb-6 text-sm">
+            <p className="text-sm text-text-secondary leading-relaxed mb-6">
               Sepertinya ada yang tidak beres. Coba muat ulang halaman atau kembali ke beranda.
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={this.handleReset}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold rounded-full hover:bg-accent-dark transition-colors text-sm"
+                className="inline-flex items-center gap-2 h-11 px-5 text-sm font-semibold text-cream bg-primary rounded-xl hover:bg-primary-hover active:scale-95 transition-all"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw size={15} />
                 Coba Lagi
               </button>
               <a
                 href="/"
-                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-text-main font-bold rounded-full hover:bg-gray-200 transition-colors text-sm"
+                className="inline-flex items-center gap-2 h-11 px-5 text-sm font-semibold text-text-secondary bg-surface-alt border border-border rounded-xl hover:bg-cream active:scale-95 transition-all"
               >
                 Ke Beranda
               </a>

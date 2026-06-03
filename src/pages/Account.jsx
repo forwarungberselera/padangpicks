@@ -7,10 +7,12 @@ import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper';
 import { useToast } from '../components/Toast';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useMetaDescription } from '../hooks/useMetaDescription';
 
 export default function Account() {
   usePageTitle('Akun Saya');
-  const { user, loading: authLoading, favorites = [] } = useAuth();
+  useMetaDescription('Kelola profil, favorit, dan rating coffee shop kamu di Harmonee.');
+  const { user, loading: authLoading, favoriteIds = [] } = useAuth();
 
   if (authLoading) {
     return (
@@ -24,7 +26,7 @@ export default function Account() {
     return <Navigate to="/" replace />;
   }
 
-  return <AccountContent user={user} favoriteIds={favorites || []} />;
+  return <AccountContent user={user} favoriteIds={favoriteIds || []} />;
 }
 
 

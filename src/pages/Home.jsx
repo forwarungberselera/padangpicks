@@ -8,6 +8,7 @@ import SuggestPlaceModal from '../components/SuggestPlaceModal';
 import Pagination from '../components/Pagination';
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useMetaDescription } from '../hooks/useMetaDescription';
 import { coffeeShops as fallbackData } from '../lib/coffee-data.js';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
 import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X, Plus, Clock3, Star } from 'lucide-react';
@@ -16,6 +17,7 @@ const PAGE_SIZE = 9;
 
 export default function Home() {
   usePageTitle('Coffee Shop Padang');
+  useMetaDescription('Temukan coffee shop, cafe, dan spot ngopi terbaik di Kota Padang. Filter by area, harga, dan rating — kurasi komunitas lokal.');
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);

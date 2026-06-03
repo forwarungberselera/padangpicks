@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Building2, Coffee, ChevronRight, Edit2, Eye, Image, Link as LinkIcon, MapPin, Plus, RefreshCw, Save, Search, Settings, Shield, Sparkles, Star, Trash2, X } from 'lucide-react';
+import { Building2, Coffee, Edit2, Eye, Image, Link as LinkIcon, MapPin, MessageSquare, Plus, RefreshCw, Save, Search, Settings, Shield, Sparkles, Star, Trash2, X } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops, serializeCoffeeShop } from '../lib/coffee-shop-mapper.js';
 import { usePageTitle } from '../hooks/usePageTitle';
+import { useMetaDescription } from '../hooks/useMetaDescription';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
@@ -32,6 +33,7 @@ const toNumber = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n)
 
 export default function Admin() {
   usePageTitle('Admin Panel');
+  useMetaDescription('Panel admin Harmonee — kelola coffee shop, hotel, lifestyle, dan saran tempat dari komunitas.');
   const { user, isAdmin, loading: authLoading } = useAuth();
   const windowWidth = useWindowWidth();
   const [activeType, setActiveType] = useState('coffee');
@@ -48,6 +50,10 @@ export default function Admin() {
   const [savingIntro, setSavingIntro] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
+  const [activeTab, setActiveTab] = useState('content'); // 'content' | 'suggestions'
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionCount, setSuggestionCount] = useState(0);
 
   const activeConfig = contentTypes[activeType];
 
@@ -83,11 +89,58 @@ export default function Admin() {
     if (data?.value) setIntroSettings({ ...defaultIntroSettings, ...data.value });
   }, []);
 
+  const loadSuggestions = useCallback(async () => {
+    if (!supabase) return;
+    setSuggestionsLoading(true);
+    const { data, error } = await supabase
+      .from('place_suggestions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    setSuggestions(error ? [] : (data || []));
+    setSuggestionsLoading(false);
+  }, []);
+
+  const loadSuggestionCount = useCallback(async () => {
+    if (!supabase) return;
+    const { count } = await supabase
+      .from('place_suggestions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    setSuggestionCount(count || 0);
+  }, []);
+
+  const handleSuggestionStatus = async (id, status) => {
+    if (!supabase) return;
+    const { error } = await supabase
+      .from('place_suggestions')
+      .update({ status })
+      .eq('id', id);
+    if (!error) {
+      setSuggestions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+      loadSuggestionCount();
+    }
+  };
+
+  const handleDeleteSuggestion = async (id) => {
+    if (!supabase || !window.confirm('Hapus saran ini?')) return;
+    const { error } = await supabase.from('place_suggestions').delete().eq('id', id);
+    if (!error) {
+      setSuggestions(prev => prev.filter(s => s.id !== id));
+      loadSuggestionCount();
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !isAdmin) return;
     loadData(activeType);
     loadIntroSettings();
-  }, [authLoading, isAdmin, activeType, loadData, loadIntroSettings]);
+    loadSuggestionCount();
+  }, [authLoading, isAdmin, activeType, loadData, loadIntroSettings, loadSuggestionCount]);
+
+  useEffect(() => {
+    if (authLoading || !isAdmin || activeTab !== 'suggestions') return;
+    loadSuggestions();
+  }, [authLoading, isAdmin, activeTab, loadSuggestions]);
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -161,9 +214,9 @@ export default function Admin() {
         <div className="grid grid-cols-3 gap-3 mb-5">
           {Object.entries(contentTypes).map(([key, config]) => {
             const Icon = config.icon;
-            const isActive = activeType === key;
+            const isActive = activeType === key && activeTab === 'content';
             return (
-              <button key={key} onClick={() => setActiveType(key)}
+              <button key={key} onClick={() => { setActiveType(key); setActiveTab('content'); }}
                 className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-2xl border transition-all active:scale-95 ${isActive ? 'bg-primary text-cream border-primary shadow-md' : 'bg-white text-text-secondary border-border hover:border-primary/30'}`}>
                 <Icon size={20} />
                 <span className="text-xl sm:text-2xl font-bold leading-none">{counts[key] || 0}</span>
@@ -172,11 +225,32 @@ export default function Admin() {
             );
           })}
         </div>
+
+        {/* Tab: Content vs Suggestions */}
+        <div className="flex bg-surface-alt p-1 rounded-xl mb-5">
+          <button
+            onClick={() => setActiveTab('content')}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'content' ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}
+          >
+            Konten
+          </button>
+          <button
+            onClick={() => setActiveTab('suggestions')}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'suggestions' ? 'bg-white text-primary shadow-sm' : 'text-muted'}`}
+          >
+            <MessageSquare size={14} />
+            Saran Tempat
+            {suggestionCount > 0 && (
+              <span className="ml-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-cream text-[10px] font-bold grid place-items-center">
+                {suggestionCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Settings panel (toggleable) */}
-      {showSettings && (
-        <div className="mb-6 bg-white rounded-2xl border border-border p-5 animate-slideUp">
+      {showSettings && (        <div className="mb-6 bg-white rounded-2xl border border-border p-5 animate-slideUp">
           <h3 className="font-semibold text-base text-text-main mb-4 flex items-center gap-2"><Sparkles size={16} className="text-primary" />Pengaturan Popup</h3>
           <form onSubmit={handleIntroSubmit} className="space-y-3">
             <label className="flex items-center gap-3 p-3 rounded-xl bg-surface-alt border border-border-light">
@@ -194,6 +268,8 @@ export default function Admin() {
       )}
 
 
+      {/* ===== CONTENT TAB ===== */}
+      {activeTab === 'content' && (<>
       {/* Search + Actions bar */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <label className="relative flex-1">
@@ -305,6 +381,94 @@ export default function Admin() {
 
       {/* Results count */}
       <p className="text-xs text-muted text-center mt-4">{filteredItems.length} dari {items.length} {activeConfig.plural.toLowerCase()}</p>
+      </>)}
+
+      {/* ===== SUGGESTIONS PANEL ===== */}
+      {activeTab === 'suggestions' && (
+        <div className="mt-0">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-muted font-medium">
+              {suggestionsLoading ? 'Memuat...' : `${suggestions.length} saran masuk`}
+            </p>
+            <button
+              onClick={loadSuggestions}
+              className="h-9 w-9 flex items-center justify-center rounded-xl border border-border bg-white active:scale-95 transition-transform"
+              aria-label="Refresh"
+            >
+              <RefreshCw size={16} className={`text-text-secondary ${suggestionsLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          {suggestionsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-24 rounded-2xl bg-surface-alt animate-pulse" />
+              ))}
+            </div>
+          ) : suggestions.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl border border-border">
+              <MessageSquare size={28} className="text-muted mx-auto mb-3 opacity-40" />
+              <p className="text-sm text-muted">Belum ada saran tempat.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map(s => (
+                <div key={s.id} className="bg-white rounded-2xl border border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h4 className="font-semibold text-sm text-text-main">{s.name}</h4>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          s.status === 'approved' ? 'bg-emerald-50 text-emerald-700' :
+                          s.status === 'rejected' ? 'bg-red-50 text-red-600' :
+                          'bg-amber-50 text-amber-700'
+                        }`}>
+                          {s.status === 'approved' ? 'Diterima' : s.status === 'rejected' ? 'Ditolak' : 'Pending'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted mb-1">
+                        {s.category || '-'} · {s.area || '-'}
+                      </p>
+                      {s.reason && (
+                        <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
+                          {s.reason}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted mt-1.5">
+                        {new Date(s.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteSuggestion(s.id)}
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 transition-colors"
+                      aria-label="Hapus saran"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+
+                  {s.status === 'pending' && (
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-border-light">
+                      <button
+                        onClick={() => handleSuggestionStatus(s.id, 'approved')}
+                        className="flex-1 h-9 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-xl hover:bg-emerald-100 active:scale-95 transition-all"
+                      >
+                        Terima
+                      </button>
+                      <button
+                        onClick={() => handleSuggestionStatus(s.id, 'rejected')}
+                        className="flex-1 h-9 text-xs font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 active:scale-95 transition-all"
+                      >
+                        Tolak
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
 
       {/* Form Modal - Full screen on mobile */}

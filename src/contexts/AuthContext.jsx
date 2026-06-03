@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState([]); // [{ id, type }]
   const [loading, setLoading] = useState(Boolean(supabase));
 
   const handleUser = useCallback(async (authUser) => {
@@ -19,24 +19,29 @@ export const AuthProvider = ({ children }) => {
 
     try {
       setUser(authUser);
-      
+
       // Fetch role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', authUser.id)
         .maybeSingle();
-      
+
       setIsAdmin(roleData?.role === 'admin');
 
-      // Fetch favs
+      // Fetch favorites — support both old schema (coffee_shop_id only)
+      // and new schema (item_id + item_type from supabase_favorites_expansion.sql)
       const { data: favsData } = await supabase
         .from('favorites')
-        .select('coffee_shop_id')
+        .select('coffee_shop_id, item_id, item_type')
         .eq('user_id', authUser.id);
-        
+
       if (favsData) {
-        setFavorites(favsData.map(f => f.coffee_shop_id));
+        const normalized = favsData.map(f => ({
+          id: f.item_id || f.coffee_shop_id,
+          type: f.item_type || 'coffee_shop',
+        })).filter(f => f.id);
+        setFavorites(normalized);
       }
     } catch (err) {
       console.error('Error fetching user metadata:', err);
@@ -72,9 +77,7 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName }
-      }
+      options: { data: { full_name: fullName } },
     });
     if (error) throw error;
   };
@@ -84,40 +87,88 @@ export const AuthProvider = ({ children }) => {
     await supabase.auth.signOut();
   };
 
-  const toggleFavorite = async (shopId) => {
+  /**
+   * Toggle favorite untuk semua jenis konten.
+   * @param {string} itemId  - UUID item
+   * @param {string} itemType - 'coffee_shop' | 'hotel' | 'lifestyle'
+   */
+  const toggleFavorite = async (itemId, itemType = 'coffee_shop') => {
     if (!user || !supabase) return false;
-    
-    const isFav = favorites.includes(shopId);
+
+    const isFav = favorites.some(f => f.id === itemId && f.type === itemType);
+
     try {
       if (isFav) {
-        // Remove
-        await supabase.from('favorites').delete().eq('user_id', user.id).eq('coffee_shop_id', shopId);
-        setFavorites(prev => prev.filter(id => id !== shopId));
+        // Hapus — coba kolom baru (item_id) dulu, fallback ke lama (coffee_shop_id)
+        const deleteQuery = supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', user.id);
+
+        // Jika schema sudah di-expand pakai item_id+item_type
+        const { error } = await deleteQuery
+          .eq('item_id', itemId)
+          .eq('item_type', itemType);
+
+        if (error) {
+          // Fallback ke schema lama (hanya coffee_shop_id)
+          await supabase
+            .from('favorites')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('coffee_shop_id', itemId);
+        }
+
+        setFavorites(prev => prev.filter(f => !(f.id === itemId && f.type === itemType)));
       } else {
-        // Add
-        await supabase.from('favorites').insert({ user_id: user.id, coffee_shop_id: shopId });
-        setFavorites(prev => [...prev, shopId]);
+        // Tambah — insert dengan kedua kolom agar kompatibel dengan schema lama & baru
+        const insertData = {
+          user_id: user.id,
+          item_id: itemId,
+          item_type: itemType,
+        };
+        // Backward compat: coffee_shop_id untuk schema lama
+        if (itemType === 'coffee_shop') {
+          insertData.coffee_shop_id = itemId;
+        }
+
+        const { error } = await supabase.from('favorites').insert(insertData);
+        if (error) throw error;
+
+        setFavorites(prev => [...prev, { id: itemId, type: itemType }]);
       }
       return !isFav;
     } catch (err) {
-      console.error('Error toggling fav:', err);
-      return isFav; // Return original state on error
+      console.error('Error toggling favorite:', err);
+      return isFav;
     }
   };
 
-  const isFavorite = (shopId) => favorites.includes(shopId);
+  /**
+   * Cek apakah item sudah difavoritkan.
+   * @param {string} itemId
+   * @param {string} itemType
+   */
+  const isFavorite = (itemId, itemType = 'coffee_shop') =>
+    favorites.some(f => f.id === itemId && f.type === itemType);
+
+  // Backward-compat: expose array of IDs (coffee_shop only) for Account page
+  const favoriteIds = favorites
+    .filter(f => f.type === 'coffee_shop')
+    .map(f => f.id);
 
   return (
     <AuthContext.Provider value={{
       user,
       isAdmin,
       favorites,
+      favoriteIds,
       loading,
       login,
       register,
       logout,
       toggleFavorite,
-      isFavorite
+      isFavorite,
     }}>
       {children}
     </AuthContext.Provider>
