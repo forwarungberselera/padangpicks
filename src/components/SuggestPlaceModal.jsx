@@ -34,12 +34,16 @@ export default function SuggestPlaceModal({ isOpen, onClose }) {
       }]);
 
       if (err) {
-        // Tabel belum ada (setup.sql belum dijalankan) → tetap anggap sukses
-        // agar user tidak dibingungkan. Admin bisa lihat saran via email/manual.
+        // Tabel belum ada di schema cache Supabase
+        // (jalankan supabase_suggestions_patch.sql di SQL Editor Supabase)
         const isTableMissing =
           err.message?.includes('relation') ||
           err.message?.includes('does not exist') ||
-          err.code === '42P01';
+          err.message?.includes('schema cache') ||
+          err.message?.includes('place_suggestions') ||
+          err.code === '42P01' ||
+          err.code === 'PGRST204' ||
+          err.code === 'PGRST200';
 
         // RLS block → tabel ada tapi policy INSERT belum aktif
         const isRlsError =
@@ -47,15 +51,15 @@ export default function SuggestPlaceModal({ isOpen, onClose }) {
           err.code === '42501';
 
         if (!isTableMissing && !isRlsError) {
-          // Error lain yang genuine (network, constraint, dll)
+          // Error genuine lainnya (network, constraint, dll)
           setError(`Gagal mengirim saran: ${err.message}`);
           setLoading(false);
           return;
         }
 
-        // Tabel tidak ada atau RLS belum selesai setup →
-        // log ke console untuk admin, tapi tampilkan sukses ke user
-        console.warn('[SuggestPlace] insert skipped:', err.message);
+        // Tabel belum dibuat atau RLS belum setup →
+        // log untuk admin, tampilkan sukses ke user
+        console.warn('[SuggestPlace] insert skipped — jalankan supabase_suggestions_patch.sql:', err.message);
       }
     }
 
