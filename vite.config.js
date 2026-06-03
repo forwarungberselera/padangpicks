@@ -14,12 +14,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Pisahkan vendor utama agar tidak berubah tiap deploy
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          // Lucide cukup besar (~300 ikon) — isolasi sendiri
-          'vendor-icons': ['lucide-react'],
+        // Rollup v4+ (Vite 8) requires manualChunks as a function, not an object
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
         },
       },
     },
