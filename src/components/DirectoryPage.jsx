@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import Pagination from './Pagination';
+
+const PAGE_SIZE = 9;
 
 export default function DirectoryPage({ table, title, description, emptyText }) {
   const [items, setItems] = useState([]);
@@ -13,6 +16,7 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
   const [sortBy, setSortBy] = useState('featured');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +58,12 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
   }, [items, search, area, sortBy]);
 
   const handleCloseModal = useCallback(() => setSelectedItem(null), []);
+
+  // Reset ke halaman 1 setiap filter / search berubah
+  useEffect(() => { setPage(1); }, [search, area, sortBy]);
+
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE);
+  const pagedItems = filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <main className="min-h-screen pb-20 md:pb-16">
@@ -127,7 +137,7 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-border overflow-hidden animate-pulse">
                 <div className="aspect-[4/3] bg-surface-alt" />
                 <div className="p-4 space-y-3">
@@ -138,48 +148,60 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
             ))}
           </div>
         ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredItems.map(item => (
-              <button
-                key={item.id || item.name}
-                type="button"
-                onClick={() => setSelectedItem(item)}
-                className="group text-left bg-white rounded-2xl border border-border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  {item.photo
-                    ? <img src={item.photo} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                    : <div className="w-full h-full bg-cream flex items-center justify-center text-sm text-muted">Tidak ada foto</div>
-                  }
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-                    {item.isFeatured && (
-                      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cream/90 text-primary backdrop-blur-sm">Featured</span>
-                    )}
-                    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-white/90 text-text-main backdrop-blur-sm">
-                      <Star size={11} className="fill-amber-500 text-amber-500" />
-                      {item.rating || 0}
-                    </span>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pagedItems.map(item => (
+                <button
+                  key={item.id || item.name}
+                  type="button"
+                  onClick={() => setSelectedItem(item)}
+                  className="group text-left bg-white rounded-2xl border border-border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                >
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    {item.photo
+                      ? <img src={item.photo} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                      : <div className="w-full h-full bg-cream flex items-center justify-center text-sm text-muted">Tidak ada foto</div>
+                    }
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                      {item.isFeatured && (
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cream/90 text-primary backdrop-blur-sm">Featured</span>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-white/90 text-text-main backdrop-blur-sm">
+                        <Star size={11} className="fill-amber-500 text-amber-500" />
+                        {item.rating || 0}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="p-3.5 sm:p-4 space-y-2">
-                  <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{item.name}</h3>
-                  <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                    <MapPin size={12} className="text-primary/60 shrink-0" />
-                    <span className="line-clamp-1">{item.area} · {item.location}</span>
+                  <div className="p-3.5 sm:p-4 space-y-2">
+                    <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{item.name}</h3>
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                      <MapPin size={12} className="text-primary/60 shrink-0" />
+                      <span className="line-clamp-1">{item.area} · {item.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-lg">
+                        Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-text-secondary">
+                        <Clock3 size={11} />
+                        {item.hours || '-'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-lg">
-                      Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-text-secondary">
-                      <Clock3 size={11} />
-                      {item.hours || '-'}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(p) => {
+                setPage(p);
+                window.scrollTo({ top: 220, behavior: 'smooth' });
+              }}
+              totalItems={filteredItems.length}
+              pageSize={PAGE_SIZE}
+            />
+          </>
         ) : (
           <div className="text-center py-20">
             <div className="w-16 h-16 rounded-2xl bg-cream flex items-center justify-center mx-auto mb-4">

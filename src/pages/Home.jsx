@@ -5,11 +5,14 @@ import CoffeeCard from '../components/CoffeeCard';
 import CoffeeModal from '../components/CoffeeModal';
 import Footer from '../components/Footer';
 import SuggestPlaceModal from '../components/SuggestPlaceModal';
+import Pagination from '../components/Pagination';
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { coffeeShops as fallbackData } from '../lib/coffee-data.js';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
 import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X, Plus, Clock3, Star } from 'lucide-react';
+
+const PAGE_SIZE = 9;
 
 export default function Home() {
   usePageTitle('Coffee Shop Padang');
@@ -23,6 +26,7 @@ export default function Home() {
   const [selectedShop, setSelectedShop] = useState(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const { recentlyViewed, addItem: addRecentlyViewed } = useRecentlyViewed();
 
   const handleSelectShop = (shop) => {
@@ -93,6 +97,12 @@ export default function Home() {
 
   const areas = useMemo(() => [...new Set(data.map(shop => shop.area))].filter(Boolean), [data]);
   const activeFilters = [area !== 'all', price !== 'all', sortBy !== 'newest'].filter(Boolean).length;
+
+  // Reset ke halaman 1 setiap filter / search berubah
+  useEffect(() => { setPage(1); }, [search, area, price, sortBy]);
+
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const pagedData = filteredData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <main className="min-h-screen pb-20 md:pb-16">
@@ -254,7 +264,7 @@ export default function Home() {
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: PAGE_SIZE }).map((_, i) => (
               <div key={i} className="bg-white rounded-2xl border border-border overflow-hidden animate-pulse">
                 <div className="aspect-[4/3] bg-surface-alt" />
                 <div className="p-4 space-y-3">
@@ -266,11 +276,23 @@ export default function Home() {
             ))}
           </div>
         ) : filteredData.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredData.map(shop => (
-              <CoffeeCard key={shop.id || shop.name} shop={shop} onClick={handleSelectShop} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pagedData.map(shop => (
+                <CoffeeCard key={shop.id || shop.name} shop={shop} onClick={handleSelectShop} />
+              ))}
+            </div>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(p) => {
+                setPage(p);
+                window.scrollTo({ top: 320, behavior: 'smooth' });
+              }}
+              totalItems={filteredData.length}
+              pageSize={PAGE_SIZE}
+            />
+          </>
         ) : (
           <div className="text-center py-20">
             <div className="w-16 h-16 rounded-2xl bg-cream flex items-center justify-center mx-auto mb-4">
