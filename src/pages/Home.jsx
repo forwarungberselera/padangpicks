@@ -6,11 +6,13 @@ import CoffeeModal from '../components/CoffeeModal';
 import Footer from '../components/Footer';
 import SuggestPlaceModal from '../components/SuggestPlaceModal';
 import { useRecentlyViewed } from '../hooks/useRecentlyViewed';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { coffeeShops as fallbackData } from '../lib/coffee-data.js';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper.js';
 import { ArrowUpDown, MapPin, Search, SlidersHorizontal, X, Plus, Clock3, Star } from 'lucide-react';
 
 export default function Home() {
+  usePageTitle('Coffee Shop Padang');
   const [searchParams, setSearchParams] = useSearchParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Clock3, Heart, MapPin, Share2, Star } from 'lucide-react';
 import { useAuth } from '../contexts/auth-context';
 import AuthModal from './AuthModal';
 import OptimizedImage from './OptimizedImage';
+import { useModalHistory } from '../hooks/useModalHistory';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export default function CoffeeCard({ shop, onClick }) {
   const { isFavorite, toggleFavorite, user } = useAuth();
@@ -10,6 +12,10 @@ export default function CoffeeCard({ shop, onClick }) {
   const [authOpen, setAuthOpen] = useState(false);
 
   const isFav = isFavorite(shop.id);
+
+  const handleCloseNotice = useCallback(() => setNoticeOpen(false), []);
+  useModalHistory(noticeOpen, handleCloseNotice);
+  useBodyScrollLock(noticeOpen);
 
   const handleFav = (e) => {
     e.stopPropagation();
@@ -48,22 +54,22 @@ export default function CoffeeCard({ shop, onClick }) {
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <OptimizedImage src={shop.photo} alt={shop.name} className="w-full h-full" />
-          
-          {/* Favorite + Share buttons */}
-          <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+
+          {/* Favorite + Share buttons — 44×44 min touch target */}
+          <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5">
             <button
               onClick={handleFav}
-              className={`w-10 h-10 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 ${
+              className={`w-11 h-11 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 ${
                 isFav ? 'bg-primary text-cream' : 'bg-white/90 text-text-secondary backdrop-blur-sm'
               }`}
-              aria-label="Toggle favorit"
+              aria-label={isFav ? 'Hapus dari favorit' : 'Tambah ke favorit'}
             >
               <Heart size={18} className={isFav ? 'fill-current' : ''} />
             </button>
             <button
               onClick={handleShare}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-text-secondary backdrop-blur-sm shadow-md transition-all active:scale-90"
-              aria-label="Share"
+              className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 text-text-secondary backdrop-blur-sm shadow-md transition-all active:scale-90"
+              aria-label="Bagikan"
             >
               <Share2 size={16} />
             </button>
@@ -121,8 +127,14 @@ export default function CoffeeCard({ shop, onClick }) {
 
       {/* Login notice */}
       {noticeOpen && (
-        <div className="fixed inset-0 z-[360] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4 modal-backdrop" onClick={() => setNoticeOpen(false)}>
-          <div className="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-6 shadow-xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[360] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm sm:p-4 modal-backdrop"
+          onClick={handleCloseNotice}
+        >
+          <div
+            className="w-full sm:max-w-sm bg-white rounded-t-2xl sm:rounded-2xl p-6 shadow-xl modal-panel-bottom"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4 sm:hidden" />
             <div className="text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-cream flex items-center justify-center mb-4 modal-icon">
@@ -140,7 +152,7 @@ export default function CoffeeCard({ shop, onClick }) {
                   Masuk
                 </button>
                 <button
-                  onClick={() => setNoticeOpen(false)}
+                  onClick={handleCloseNotice}
                   className="flex-1 h-12 text-sm font-semibold text-text-secondary bg-surface-alt rounded-xl active:scale-95 transition-transform"
                 >
                   Nanti

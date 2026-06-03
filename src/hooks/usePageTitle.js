@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const BASE_TITLE = 'PadangPicks!';
+const BASE_TITLE = 'Harmonee';
 
 /**
  * Hook to dynamically set page title

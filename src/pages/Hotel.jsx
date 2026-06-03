@@ -1,6 +1,8 @@
 import DirectoryPage from '../components/DirectoryPage';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function Hotel() {
+  usePageTitle('Hotel Padang');
   return (
     <DirectoryPage
       table="hotels"

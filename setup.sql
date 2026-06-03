@@ -147,8 +147,8 @@ VALUES (
     'intro_popup',
     '{
       "enabled": true,
-      "title": "Selamat datang di PadangPicks",
-      "body": "PadangPicks adalah direktori kurasi untuk menemukan coffee shop, hotel, dan lifestyle spot pilihan di Kota Padang.",
+      "title": "Selamat datang di Harmonee",
+      "body": "Harmonee adalah direktori kurasi untuk menemukan coffee shop, hotel, dan lifestyle spot pilihan di Kota Padang.",
       "buttonLabel": "Mulai Jelajah"
     }'::jsonb
 )
@@ -359,3 +359,38 @@ ON public.coffee_shop_ratings FOR DELETE USING (auth.uid() = user_id);
 -- 1. Buka menu Authentication > Users di Supabase, buat user baru: admin@padangpicks.com
 -- 2. Copy UUID/User ID dari user tersebut, dan jalankan perintah ini (ganti ID_USER_DI_SINI):
 -- INSERT INTO public.user_roles (user_id, role) VALUES ('ID_USER_DI_SINI', 'admin');
+
+-- ==========================================
+-- 5. Tabel place_suggestions
+-- Untuk menyimpan saran tempat dari komunitas (SuggestPlaceModal)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS public.place_suggestions (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT DEFAULT 'Coffee Shop',
+    area TEXT,
+    reason TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RLS untuk place_suggestions
+ALTER TABLE public.place_suggestions ENABLE ROW LEVEL SECURITY;
+
+-- Siapapun bisa mengirim saran (INSERT)
+DROP POLICY IF EXISTS "Anyone can insert suggestions." ON public.place_suggestions;
+CREATE POLICY "Anyone can insert suggestions."
+ON public.place_suggestions FOR INSERT WITH CHECK (true);
+
+-- Hanya admin yang bisa melihat dan mengelola saran
+DROP POLICY IF EXISTS "Admins can view suggestions." ON public.place_suggestions;
+CREATE POLICY "Admins can view suggestions."
+ON public.place_suggestions FOR SELECT USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can update suggestions." ON public.place_suggestions;
+CREATE POLICY "Admins can update suggestions."
+ON public.place_suggestions FOR UPDATE USING (public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can delete suggestions." ON public.place_suggestions;
+CREATE POLICY "Admins can delete suggestions."
+ON public.place_suggestions FOR DELETE USING (public.is_admin());

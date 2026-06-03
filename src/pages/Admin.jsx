@@ -4,6 +4,20 @@ import { Building2, Coffee, ChevronRight, Edit2, Eye, Image, Link as LinkIcon, M
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops, serializeCoffeeShop } from '../lib/coffee-shop-mapper.js';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useModalHistory } from '../hooks/useModalHistory';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+
+// Reactive hook for window width
+function useWindowWidth() {
+  const [width, setWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return width;
+}
 
 const contentTypes = {
   coffee: { label: 'Coffee Shop', plural: 'Coffee Shops', table: 'coffee_shops', icon: Coffee, categoryOptions: ['Cafe', 'Coffee Shop', 'Bakery', 'Restaurant', 'Coworking'], emptyText: 'Belum ada coffee shop.' },
@@ -17,7 +31,9 @@ const defaultIntroSettings = { enabled: true, title: 'Selamat datang di Harmonee
 const toNumber = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
 
 export default function Admin() {
+  usePageTitle('Admin Panel');
   const { user, isAdmin, loading: authLoading } = useAuth();
+  const windowWidth = useWindowWidth();
   const [activeType, setActiveType] = useState('coffee');
   const [items, setItems] = useState([]);
   const [counts, setCounts] = useState({ coffee: 0, hotel: 0, lifestyle: 0 });
@@ -34,6 +50,11 @@ export default function Admin() {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
   const activeConfig = contentTypes[activeType];
+
+  // Back button closes modal; body scroll locked while form is open
+  const handleCloseModal = useCallback(() => { setIsModalOpen(false); }, []);
+  useModalHistory(isModalOpen, handleCloseModal);
+  useBodyScrollLock(isModalOpen);
 
 
   const loadCounts = useCallback(async () => {
@@ -99,7 +120,7 @@ export default function Admin() {
     const request = editingId ? supabase.from(activeConfig.table).update(payload).eq('id', editingId) : supabase.from(activeConfig.table).insert([payload]);
     const { error } = await request;
     if (error) { setStatus(`Gagal: ${error.message}`); }
-    else { setIsModalOpen(false); setEditingId(null); setFormData(emptyFormData); setStatus('Berhasil disimpan.'); loadData(activeType); }
+    else { handleCloseModal(); setEditingId(null); setFormData(emptyFormData); setStatus('Berhasil disimpan.'); loadData(activeType); }
     setSaving(false);
   };
 
@@ -206,7 +227,7 @@ export default function Admin() {
           <p className="text-muted text-sm">{search ? 'Tidak ditemukan.' : activeConfig.emptyText}</p>
           {!search && <button onClick={() => handleOpenModal()} className="mt-3 text-sm font-medium text-primary">+ Tambah {activeConfig.label}</button>}
         </div>
-      ) : viewMode === 'cards' || window.innerWidth < 640 ? (
+      ) : viewMode === 'cards' || windowWidth < 640 ? (
         /* Card view - great for mobile */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredItems.map(item => (
@@ -288,8 +309,8 @@ export default function Admin() {
 
       {/* Form Modal - Full screen on mobile */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative shadow-2xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 modal-backdrop" onClick={handleCloseModal}>
+          <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto overscroll-contain relative shadow-2xl modal-panel-bottom" onClick={e => e.stopPropagation()}>
             {/* Mobile drag handle */}
             <div className="sm:hidden sticky top-0 z-10 pt-3 pb-2 bg-white rounded-t-2xl">
               <div className="w-10 h-1 bg-border rounded-full mx-auto" />
@@ -301,7 +322,7 @@ export default function Admin() {
                 <h3 className="font-display text-lg text-primary">{editingId ? 'Edit' : 'Tambah'} {activeConfig.label}</h3>
                 <p className="text-xs text-muted mt-0.5">{editingId ? 'Perbarui data listing' : 'Isi form untuk menambahkan listing baru'}</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-alt text-muted hover:text-text-main transition-colors"><X size={18} /></button>
+              <button onClick={handleCloseModal} className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-alt text-muted hover:text-text-main transition-colors" aria-label="Tutup"><X size={18} /></button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-5 space-y-5">

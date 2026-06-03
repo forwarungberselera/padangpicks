@@ -5,8 +5,11 @@ import CoffeeModal from '../components/CoffeeModal';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper';
+import { useToast } from '../components/Toast';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function Account() {
+  usePageTitle('Akun Saya');
   const { user, loading: authLoading, favorites = [] } = useAuth();
 
   if (authLoading) {
@@ -26,6 +29,7 @@ export default function Account() {
 
 
 function AccountContent({ user, favoriteIds }) {
+  const toast = useToast();
   const [name, setName] = useState(user.user_metadata?.full_name || '');
   const [email, setEmail] = useState(user.email || '');
   const [password, setPassword] = useState('');
@@ -34,6 +38,7 @@ function AccountContent({ user, favoriteIds }) {
   const [favoriteShops, setFavoriteShops] = useState([]);
   const [selectedShop, setSelectedShop] = useState(null);
   const [ratings, setRatings] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   const initials = useMemo(() => {
     const s = name || email || 'U';
@@ -69,8 +74,14 @@ function AccountContent({ user, favoriteIds }) {
     if (email && email !== user.email) updates.email = email;
     if (password) updates.password = password;
     const { error } = await supabase.auth.updateUser(updates);
-    if (error) setStatus(error.message);
-    else { setPassword(''); setStatus('Profil tersimpan!'); }
+    if (error) {
+      setStatus(error.message);
+      toast.error(error.message);
+    } else {
+      setPassword('');
+      setStatus('Profil tersimpan!');
+      toast.success('Profil berhasil disimpan!');
+    }
     setSaving(false);
   };
 
@@ -133,21 +144,44 @@ function AccountContent({ user, favoriteIds }) {
                 <h2 className="font-semibold text-base text-text-main">Hapus Akun</h2>
                 <p className="text-xs text-muted mt-1 leading-relaxed">Semua data termasuk favorit dan rating akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</p>
                 <button
+                  disabled={deleting}
                   onClick={async () => {
                     if (!window.confirm('Yakin ingin menghapus akun? Semua data akan hilang permanen.')) return;
                     if (!window.confirm('Ini TIDAK bisa dibatalkan. Lanjutkan hapus akun?')) return;
                     if (!supabase) return;
-                    // Delete user data first
-                    await supabase.from('favorites').delete().eq('user_id', user.id);
-                    await supabase.from('coffee_shop_ratings').delete().eq('user_id', user.id);
-                    await supabase.from('user_roles').delete().eq('user_id', user.id);
-                    // Sign out (actual user deletion requires admin API or edge function)
-                    await supabase.auth.signOut();
-                    window.location.href = '/';
+                    setDeleting(true);
+                    try {
+                      // 1. Hapus data relasi milik user
+                      await supabase.from('favorites').delete().eq('user_id', user.id);
+                      await supabase.from('coffee_shop_ratings').delete().eq('user_id', user.id);
+                      await supabase.from('user_roles').delete().eq('user_id', user.id);
+
+                      // 2. Coba hapus akun Auth via Edge Function
+                      const { error: fnError } = await supabase.functions.invoke('delete-user', {
+                        body: { user_id: user.id },
+                      });
+
+                      if (fnError) {
+                        // Edge function belum ada — fallback: sign out saja dan beri tahu user
+                        console.warn('delete-user function not available, signing out instead:', fnError.message);
+                        toast.info('Data berhasil dihapus. Akun auth memerlukan penghapusan manual oleh admin.');
+                        await supabase.auth.signOut();
+                      } else {
+                        toast.success('Akun berhasil dihapus.');
+                      }
+                    } catch (err) {
+                      toast.error('Gagal menghapus akun: ' + err.message);
+                    } finally {
+                      setDeleting(false);
+                      window.location.href = '/';
+                    }
                   }}
-                  className="mt-3 h-10 px-4 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 active:scale-95 transition-all"
+                  className="mt-3 h-10 px-4 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 active:scale-95 transition-all disabled:opacity-60"
                 >
-                  <span className="flex items-center gap-1.5"><Trash2 size={13} /> Hapus Akun Saya</span>
+                  <span className="flex items-center gap-1.5">
+                    <Trash2 size={13} />
+                    {deleting ? 'Menghapus...' : 'Hapus Akun Saya'}
+                  </span>
                 </button>
               </div>
             </div>
