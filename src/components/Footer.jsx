@@ -11,8 +11,8 @@ export default function Footer() {
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
           <Link to="/privacy" className="hover:text-primary transition-colors">Privasi</Link>
           <Link to="/terms" className="hover:text-primary transition-colors">Syarat & Ketentuan</Link>
-          <a href="mailto:hello@harmonee.id" className="hover:text-primary transition-colors">Kontak</a>
-          <a href="https://instagram.com/harmonee.id" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+          <a href="mailto:hello@harmonee.web.id" className="hover:text-primary transition-colors">Kontak</a>
+          <a href="https://www.instagram.com/harmonee.id_/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
         </nav>
       </div>
       <p className="mt-4 text-[11px] text-muted">

@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /account
+Disallow: /admin
+Allow: /
+
+Sitemap: https://harmonee.web.id/sitemap.xml

@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useMetaDescription } from '../hooks/useMetaDescription';
 
 export default function Privacy() {
+  usePageTitle('Kebijakan Privasi');
+  useMetaDescription('Kebijakan privasi Harmonee — bagaimana kami mengumpulkan, menggunakan, dan melindungi data kamu.');
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-24 md:pb-12">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-primary mb-6 transition-colors">
@@ -35,7 +39,7 @@ export default function Privacy() {
 
         <section>
           <h2 className="font-display text-lg text-primary mb-2">3. Penyimpanan Data</h2>
-          <p>Data disimpan secara aman menggunakan Supabase dengan enkripsi. Password tidak pernah disimpan dalam bentuk teks biasa. Kami menerapkan Row Level Security untuk memastikan setiap pengguna hanya bisa mengakses datanya sendiri.</p>
+          <p>Data disimpan secara aman menggunakan enkripsi berlapis. Password tidak pernah disimpan dalam bentuk teks biasa. Kami menerapkan kontrol akses ketat untuk memastikan setiap pengguna hanya bisa mengakses datanya sendiri.</p>
         </section>
 
         <section>
@@ -64,7 +68,7 @@ export default function Privacy() {
 
         <section>
           <h2 className="font-display text-lg text-primary mb-2">7. Kontak</h2>
-          <p>Jika ada pertanyaan tentang kebijakan privasi ini, hubungi kami di <a href="mailto:hello@harmonee.id" className="text-primary hover:underline">hello@harmonee.id</a>.</p>
+          <p>Jika ada pertanyaan tentang kebijakan privasi ini, hubungi kami di <a href="mailto:hello@harmonee.web.id" className="text-primary hover:underline">hello@harmonee.web.id</a>.</p>
         </section>
       </div>
     </main>

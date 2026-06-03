@@ -23,9 +23,11 @@ export function useRecentlyViewed() {
       area: shop.area || '',
       photo: shop.photo || '',
       rating: shop.rating || 0,
+      type: shop.type || 'coffee_shop',
       viewedAt: Date.now(),
     };
     setItems(prev => {
+      // Deduplicate by ID (prefer actual UUID over name fallback)
       const filtered = prev.filter(i => i.id !== entry.id);
       const updated = [entry, ...filtered].slice(0, MAX_ITEMS);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));

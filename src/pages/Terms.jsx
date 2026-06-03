@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
+import { useMetaDescription } from '../hooks/useMetaDescription';
 
 export default function Terms() {
+  usePageTitle('Syarat & Ketentuan');
+  useMetaDescription('Syarat dan ketentuan penggunaan layanan direktori Harmonee — hak, kewajiban, dan batasan pengguna.');
   return (
     <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 pb-24 md:pb-12">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-primary mb-6 transition-colors">
@@ -69,7 +73,7 @@ export default function Terms() {
 
         <section>
           <h2 className="font-display text-lg text-primary mb-2">9. Kontak</h2>
-          <p>Pertanyaan terkait syarat dan ketentuan dapat dikirim ke <a href="mailto:hello@harmonee.id" className="text-primary hover:underline">hello@harmonee.id</a>.</p>
+          <p>Pertanyaan terkait syarat dan ketentuan dapat dikirim ke <a href="mailto:hello@harmonee.web.id" className="text-primary hover:underline">hello@harmonee.web.id</a>.</p>
         </section>
       </div>
     </main>

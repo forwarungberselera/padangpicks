@@ -122,10 +122,10 @@ SPA routing ditangani otomatis lewat `dist/404.html` yang dibuat oleh script `sc
 
 ## Edge Function (Opsional)
 
-Untuk fitur "Hapus Akun" yang benar-benar menghapus user dari Supabase Auth, deploy Edge Function di `supabase/functions/delete-user/index.ts`:
+Untuk fitur "Hapus Akun" yang benar-benar menghapus user dari sistem autentikasi, deploy Edge Function di `supabase/functions/delete-user/index.ts`:
 
 ```bash
 supabase functions deploy delete-user
 ```
 
-Tanpa Edge Function, hapus akun tetap berfungsi (data relasi dihapus + sign out) tapi entri di Auth tidak terhapus.
+Tanpa Edge Function, hapus akun tetap berfungsi (data relasi dihapus + sign out) tapi entri di sistem autentikasi tidak terhapus.

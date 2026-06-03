@@ -1,7 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Home, ArrowLeft } from 'lucide-react';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export default function NotFound() {
+  usePageTitle('Halaman Tidak Ditemukan');
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center p-6">
       <div className="text-center max-w-sm">
@@ -10,7 +14,7 @@ export default function NotFound() {
         <p className="text-sm text-text-secondary mb-8">Halaman yang kamu cari tidak ada atau sudah dipindahkan.</p>
         <div className="flex gap-3 justify-center">
           <Link to="/" className="inline-flex items-center gap-2 h-11 px-5 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform"><Home size={15} />Beranda</Link>
-          <button onClick={() => window.history.back()} className="inline-flex items-center gap-2 h-11 px-5 text-sm font-semibold text-text-secondary bg-surface-alt rounded-xl active:scale-95 transition-transform"><ArrowLeft size={15} />Kembali</button>
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 h-11 px-5 text-sm font-semibold text-text-secondary bg-surface-alt rounded-xl active:scale-95 transition-transform"><ArrowLeft size={15} />Kembali</button>
         </div>
       </div>
     </div>

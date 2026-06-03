@@ -1,14 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Clock3, ExternalLink, MapPin, Search, SlidersHorizontal, Star, X } from 'lucide-react';
+import { Clock3, ExternalLink, Heart, MapPin, Search, SlidersHorizontal, Star, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { normalizeCoffeeShops } from '../lib/coffee-shop-mapper';
+import { useAuth } from '../contexts/auth-context';
 import { useModalHistory } from '../hooks/useModalHistory';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 9;
 
+// Map table name → item type for favorites
+const TABLE_TYPE_MAP = {
+  hotels: 'hotel',
+  lifestyle_places: 'lifestyle',
+  coffee_shops: 'coffee_shop',
+};
+
 export default function DirectoryPage({ table, title, description, emptyText }) {
+  const { isFavorite, toggleFavorite, user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -17,6 +26,9 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
   const [selectedItem, setSelectedItem] = useState(null);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [page, setPage] = useState(1);
+  const [favLoadingId, setFavLoadingId] = useState(null);
+
+  const itemType = TABLE_TYPE_MAP[table] || 'coffee_shop';
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +70,15 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
   }, [items, search, area, sortBy]);
 
   const handleCloseModal = useCallback(() => setSelectedItem(null), []);
+
+  const handleToggleFav = async (e, item) => {
+    e.stopPropagation();
+    if (!user || !item.id) return;
+    if (favLoadingId) return;
+    setFavLoadingId(item.id);
+    await toggleFavorite(item.id, itemType);
+    setFavLoadingId(null);
+  };
 
   // Reset ke halaman 1 setiap filter / search berubah
   useEffect(() => { setPage(1); }, [search, area, sortBy]);
@@ -150,46 +171,72 @@ export default function DirectoryPage({ table, title, description, emptyText }) 
         ) : filteredItems.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pagedItems.map(item => (
-                <button
-                  key={item.id || item.name}
-                  type="button"
-                  onClick={() => setSelectedItem(item)}
-                  className="group text-left bg-white rounded-2xl border border-border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    {item.photo
-                      ? <img src={item.photo} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                      : <div className="w-full h-full bg-cream flex items-center justify-center text-sm text-muted">Tidak ada foto</div>
-                    }
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-                      {item.isFeatured && (
-                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cream/90 text-primary backdrop-blur-sm">Featured</span>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-white/90 text-text-main backdrop-blur-sm">
-                        <Star size={11} className="fill-amber-500 text-amber-500" />
-                        {item.rating || 0}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-3.5 sm:p-4 space-y-2">
-                    <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{item.name}</h3>
-                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
-                      <MapPin size={12} className="text-primary/60 shrink-0" />
-                      <span className="line-clamp-1">{item.area} · {item.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-lg">
-                        Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-text-secondary">
-                        <Clock3 size={11} />
-                        {item.hours || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              ))}
+              {pagedItems.map(item => {
+                const isFav = isFavorite(item.id, itemType);
+                const isFavLoading = favLoadingId === item.id;
+                return (
+                  <article
+                    key={item.id || item.name}
+                    className="group relative bg-white rounded-2xl border border-border overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    {/* Clickable area for modal */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedItem(item)}
+                      className="w-full text-left active:scale-[0.98] transition-transform"
+                      aria-label={`Lihat detail ${item.name}`}
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        {item.photo
+                          ? <img src={item.photo} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                          : <div className="w-full h-full bg-cream flex items-center justify-center text-sm text-muted">Tidak ada foto</div>
+                        }
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                          {item.isFeatured && (
+                            <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cream/90 text-primary backdrop-blur-sm">Featured</span>
+                          )}
+                          <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold bg-white/90 text-text-main backdrop-blur-sm">
+                            <Star size={11} className="fill-amber-500 text-amber-500" />
+                            {item.rating || 0}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3.5 sm:p-4 space-y-2">
+                        <h3 className="font-semibold text-base text-text-main leading-tight line-clamp-1">{item.name}</h3>
+                        <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                          <MapPin size={12} className="text-primary/60 shrink-0" />
+                          <span className="line-clamp-1">{item.area} · {item.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-lg">
+                            Rp{((item.priceMin || 0) / 1000).toFixed(0)}k - {((item.priceMax || 0) / 1000).toFixed(0)}k
+                          </span>
+                          <span className="flex items-center gap-1 text-xs text-text-secondary">
+                            <Clock3 size={11} />
+                            {item.hours || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Favorite button — absolute so it doesn't interfere with card click */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleFav(e, item)}
+                      disabled={isFavLoading}
+                      className={`absolute top-2.5 right-2.5 w-11 h-11 flex items-center justify-center rounded-full shadow-md transition-all active:scale-90 disabled:opacity-60 ${
+                        isFav ? 'bg-primary text-cream' : 'bg-white/90 text-text-secondary backdrop-blur-sm'
+                      }`}
+                      aria-label={isFav ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+                    >
+                      {isFavLoading
+                        ? <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        : <Heart size={16} className={isFav ? 'fill-current' : ''} />
+                      }
+                    </button>
+                  </article>
+                );
+              })}
             </div>
             <Pagination
               currentPage={page}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Heart, Lock, Mail, Save, Star, Trash2, User, AlertTriangle } from 'lucide-react';
+import { Building2, Coffee, Heart, Lock, Mail, Save, Sparkles, Star, Trash2, User, AlertTriangle } from 'lucide-react';
 import CoffeeModal from '../components/CoffeeModal';
 import { useAuth } from '../contexts/auth-context';
 import { supabase } from '../lib/supabase';
@@ -9,10 +9,16 @@ import { useToast } from '../components/Toast';
 import { usePageTitle } from '../hooks/usePageTitle';
 import { useMetaDescription } from '../hooks/useMetaDescription';
 
+const TYPE_CONFIG = {
+  coffee_shop: { label: 'Coffee Shop', table: 'coffee_shops',     icon: Coffee    },
+  hotel:       { label: 'Hotel',        table: 'hotels',           icon: Building2 },
+  lifestyle:   { label: 'Lifestyle',    table: 'lifestyle_places', icon: Sparkles  },
+};
+
 export default function Account() {
   usePageTitle('Akun Saya');
   useMetaDescription('Kelola profil, favorit, dan rating coffee shop kamu di Harmonee.');
-  const { user, loading: authLoading, favoriteIds = [] } = useAuth();
+  const { user, loading: authLoading, favorites = [] } = useAuth();
 
   if (authLoading) {
     return (
@@ -26,18 +32,19 @@ export default function Account() {
     return <Navigate to="/" replace />;
   }
 
-  return <AccountContent user={user} favoriteIds={favoriteIds || []} />;
+  return <AccountContent user={user} favorites={favorites} />;
 }
 
 
-function AccountContent({ user, favoriteIds }) {
+function AccountContent({ user, favorites }) {
   const toast = useToast();
   const [name, setName] = useState(user.user_metadata?.full_name || '');
   const [email, setEmail] = useState(user.email || '');
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState('');
-  const [favoriteShops, setFavoriteShops] = useState([]);
+  // favoriteShops: [{...shopData, _type: 'coffee_shop'|'hotel'|'lifestyle'}]
+  const [favoriteItems, setFavoriteItems] = useState([]);
   const [selectedShop, setSelectedShop] = useState(null);
   const [ratings, setRatings] = useState([]);
   const [deleting, setDeleting] = useState(false);
@@ -51,22 +58,41 @@ function AccountContent({ user, favoriteIds }) {
     let cancelled = false;
     const load = async () => {
       if (!supabase) return;
-      if (favoriteIds && favoriteIds.length > 0) {
-        const { data } = await supabase.from('coffee_shops').select('*').in('id', favoriteIds);
-        if (!cancelled) setFavoriteShops(normalizeCoffeeShops(data || []));
-      } else {
-        if (!cancelled) setFavoriteShops([]);
-      }
-      const { data: rows } = await supabase.from('coffee_shop_ratings').select('rating, coffee_shop_id').eq('user_id', user.id).order('updated_at', { ascending: false });
+
+      // Group favorites by type
+      const grouped = { coffee_shop: [], hotel: [], lifestyle: [] };
+      favorites.forEach(f => {
+        if (grouped[f.type]) grouped[f.type].push(f.id);
+      });
+
+      // Fetch each type in parallel
+      const results = await Promise.all(
+        Object.entries(TYPE_CONFIG).map(async ([type, config]) => {
+          const ids = grouped[type] || [];
+          if (ids.length === 0) return [];
+          const { data } = await supabase.from(config.table).select('*').in('id', ids);
+          return normalizeCoffeeShops(data || []).map(item => ({ ...item, _type: type }));
+        })
+      );
+
+      if (!cancelled) setFavoriteItems(results.flat());
+
+      // Load user ratings (coffee shops only)
+      const { data: rows } = await supabase
+        .from('coffee_shop_ratings')
+        .select('rating, coffee_shop_id')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
       if (!rows || rows.length === 0) { if (!cancelled) setRatings([]); return; }
       const ids = rows.map(r => r.coffee_shop_id);
       const { data: shops } = await supabase.from('coffee_shops').select('id,name,area,photo').in('id', ids);
-      const shopMap = new Map((normalizeCoffeeShops(shops || [])).map(s => [s.id, s]));
+      const shopMap = new Map(normalizeCoffeeShops(shops || []).map(s => [s.id, s]));
       if (!cancelled) setRatings(rows.map(r => ({ ...r, shop: shopMap.get(r.coffee_shop_id) })));
     };
     load();
     return () => { cancelled = true; };
-  }, [favoriteIds, user.id]);
+  }, [favorites, user.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +114,7 @@ function AccountContent({ user, favoriteIds }) {
   };
 
   const handleShopUpdated = (u) => {
-    setFavoriteShops(prev => prev.map(shop => shop.id === u.id ? u : shop));
+    setFavoriteItems(prev => prev.map(item => item.id === u.id ? { ...u, _type: item._type } : item));
     setSelectedShop(u);
   };
 
@@ -113,17 +139,43 @@ function AccountContent({ user, favoriteIds }) {
               <button disabled={saving} className="w-full h-12 flex items-center justify-center gap-2 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-[0.98] transition-transform disabled:opacity-60"><Save size={15}/>{saving?'Menyimpan...':'Simpan'}</button>
             </form>
           </section>
+
+          {/* Favorites — all categories */}
           <section className="bg-white rounded-2xl border border-border p-5">
-            <div className="flex items-center justify-between mb-3"><h2 className="font-semibold text-base text-text-main">Favorit</h2><span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-full"><Heart size={12}/>{favoriteShops.length}</span></div>
-            {favoriteShops.length === 0 ? <p className="text-sm text-muted">Belum ada favorit.</p> : (
-              <div className="space-y-2">{favoriteShops.map(shop => (
-                <button key={shop.id} onClick={() => setSelectedShop(shop)} className="w-full flex items-center gap-3 p-3 rounded-xl bg-surface-alt hover:bg-cream/50 active:scale-[0.98] transition-all text-left">
-                  {shop.photo && <img src={shop.photo} alt={shop.name} className="h-10 w-10 rounded-lg object-cover" />}
-                  <div className="min-w-0 flex-1"><div className="font-medium text-sm text-text-main truncate">{shop.name}</div><div className="text-xs text-muted">{shop.area}</div></div>
-                </button>
-              ))}</div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-base text-text-main">Favorit</h2>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-cream px-2.5 py-1 rounded-full">
+                <Heart size={12}/>{favoriteItems.length}
+              </span>
+            </div>
+            {favoriteItems.length === 0 ? (
+              <p className="text-sm text-muted">Belum ada favorit.</p>
+            ) : (
+              <div className="space-y-2">
+                {favoriteItems.map(item => {
+                  const cfg = TYPE_CONFIG[item._type] || TYPE_CONFIG.coffee_shop;
+                  const TypeIcon = cfg.icon;
+                  return (
+                    <button
+                      key={`${item._type}-${item.id}`}
+                      onClick={() => item._type === 'coffee_shop' ? setSelectedShop(item) : null}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl bg-surface-alt hover:bg-cream/50 active:scale-[0.98] transition-all text-left ${item._type !== 'coffee_shop' ? 'cursor-default' : ''}`}
+                    >
+                      {item.photo
+                        ? <img src={item.photo} alt={item.name} className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                        : <div className="h-10 w-10 rounded-lg bg-cream flex items-center justify-center shrink-0"><TypeIcon size={16} className="text-primary/50" /></div>
+                      }
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-text-main truncate">{item.name}</div>
+                        <div className="text-xs text-muted">{item.area} · <span className="capitalize">{cfg.label}</span></div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </section>
+
           <section className="bg-white rounded-2xl border border-border p-5">
             <div className="flex items-center justify-between mb-3"><h2 className="font-semibold text-base text-text-main">Rating Saya</h2><span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full"><Star size={12}/>{ratings.length}</span></div>
             {ratings.length === 0 ? <p className="text-sm text-muted">Belum ada rating.</p> : (

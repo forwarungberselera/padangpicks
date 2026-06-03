@@ -67,13 +67,13 @@ export const AuthProvider = ({ children }) => {
   }, [handleUser]);
 
   const login = async (email, password) => {
-    if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
+    if (!supabase) throw new Error('Layanan autentikasi belum tersedia.');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
   };
 
   const register = async (email, password, fullName) => {
-    if (!supabase) throw new Error('Supabase belum dikonfigurasi.');
+    if (!supabase) throw new Error('Layanan autentikasi belum tersedia.');
     const { error } = await supabase.auth.signUp({
       email,
       password,

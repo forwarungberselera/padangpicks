@@ -26,8 +26,13 @@ export default function OptimizedImage({ src, alt, className = '', fallbackClass
 
   if (error || !src) {
     return (
-      <div ref={imgRef} className={`flex items-center justify-center bg-cream ${fallbackClass || className}`}>
-        <ImageOff size={24} className="text-primary/30" />
+      <div
+        ref={imgRef}
+        role="img"
+        aria-label={alt || 'Gambar tidak tersedia'}
+        className={`flex items-center justify-center bg-cream ${fallbackClass || className}`}
+      >
+        <ImageOff size={24} className="text-primary/30" aria-hidden="true" />
       </div>
     );
   }
