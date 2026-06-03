@@ -1,1 +1,7 @@
-/*    /index.html   200
+# Cloudflare Pages — tidak ada redirect rules di sini.
+#
+# SPA fallback ditangani oleh dist/404.html yang dibuat otomatis saat build
+# (lihat scripts/copy-404.js dan npm run build).
+#
+# Cloudflare Pages secara native serve 404.html untuk semua path yang tidak
+# cocok dengan static asset, sehingga React Router tetap berfungsi.
