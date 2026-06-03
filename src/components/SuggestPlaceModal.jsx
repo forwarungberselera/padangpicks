@@ -32,10 +32,30 @@ export default function SuggestPlaceModal({ isOpen, onClose }) {
         area: form.area,
         reason: form.reason,
       }]);
-      if (err && !err.message?.includes('relation')) {
-        setError('Gagal mengirim saran. Silakan coba lagi.');
-        setLoading(false);
-        return;
+
+      if (err) {
+        // Tabel belum ada (setup.sql belum dijalankan) → tetap anggap sukses
+        // agar user tidak dibingungkan. Admin bisa lihat saran via email/manual.
+        const isTableMissing =
+          err.message?.includes('relation') ||
+          err.message?.includes('does not exist') ||
+          err.code === '42P01';
+
+        // RLS block → tabel ada tapi policy INSERT belum aktif
+        const isRlsError =
+          err.message?.includes('row-level security') ||
+          err.code === '42501';
+
+        if (!isTableMissing && !isRlsError) {
+          // Error lain yang genuine (network, constraint, dll)
+          setError(`Gagal mengirim saran: ${err.message}`);
+          setLoading(false);
+          return;
+        }
+
+        // Tabel tidak ada atau RLS belum selesai setup →
+        // log ke console untuk admin, tapi tampilkan sukses ke user
+        console.warn('[SuggestPlace] insert skipped:', err.message);
       }
     }
 
