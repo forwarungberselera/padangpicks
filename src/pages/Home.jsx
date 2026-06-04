@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import CoffeeCard from '../components/CoffeeCard';
 import CoffeeModal from '../components/CoffeeModal';
@@ -319,6 +319,33 @@ export default function Home() {
           <button onClick={() => setSuggestOpen(true)} className="h-12 px-6 inline-flex items-center justify-center gap-2 text-sm font-semibold text-cream bg-primary rounded-xl active:scale-95 transition-transform shrink-0">
             <Plus size={16} /> Suggest Tempat
           </button>
+        </div>
+      </section>
+
+      {/* About section — penting untuk kredibilitas di mata Google */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="rounded-2xl border border-border bg-white p-5 sm:p-6">
+          <div className="flex items-start gap-4">
+            <img src="/harmonee-logo.png" alt="Harmonee" className="h-12 w-12 rounded-xl object-cover shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-lg text-primary mb-1">Tentang Harmonee</h2>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                Harmonee adalah direktori kurasi coffee shop, hotel, dan lifestyle spot terbaik di Kota Padang, Sumatera Barat.
+                Kami membantu warga lokal dan wisatawan menemukan tempat yang tepat — berdasarkan rating komunitas nyata, bukan iklan.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Link to="/tentang" className="text-xs font-medium text-primary hover:underline">
+                  Selengkapnya →
+                </Link>
+                <a href="mailto:hello@harmonee.web.id" className="text-xs font-medium text-muted hover:text-primary transition-colors">
+                  hello@harmonee.web.id
+                </a>
+                <Link to="/privacy" className="text-xs font-medium text-muted hover:text-primary transition-colors">
+                  Kebijakan Privasi
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

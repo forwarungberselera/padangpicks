@@ -18,6 +18,7 @@ const Account = lazy(() => import('./pages/Account'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
+const About = lazy(() => import('./pages/About'));
 
 function App() {
   return (
@@ -28,7 +29,8 @@ function App() {
             <ScrollToTop />
             <BackToTop />
             <Header />
-            <SiteIntroModal />
+            {/* SiteIntroModal dinonaktifkan sementara selama proses review Google Safe Browsing */}
+            {/* <SiteIntroModal /> */}
             <Suspense fallback={<PageSkeleton />}>
               <Routes>
                 <Route path="/" element={<Home />} />
@@ -38,6 +40,7 @@ function App() {
                 <Route path="/account" element={<Account />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
+                <Route path="/tentang" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/auth-context';
 import AuthModal from './AuthModal';
-import { Coffee, Building2, LogOut, Shield, Sparkles, User, X } from 'lucide-react';
+import { Coffee, Building2, Info, LogOut, Shield, Sparkles, User } from 'lucide-react';
 
 export default function Header() {
   const { user, isAdmin, logout } = useAuth();
@@ -53,6 +53,7 @@ export default function Header() {
               <DesktopNavLink to="/" icon={Coffee} label="Coffee" />
               <DesktopNavLink to="/hotel" icon={Building2} label="Hotel" />
               <DesktopNavLink to="/lifestyle" icon={Sparkles} label="Lifestyle" />
+              <DesktopNavLink to="/tentang" icon={Info} label="Tentang" />
               {isAdmin && <DesktopNavLink to="/admin" icon={Shield} label="Admin" />}
             </nav>
 
@@ -81,6 +82,9 @@ export default function Header() {
                       <div className="py-1">
                         <Link to="/account" className="flex items-center gap-2.5 px-4 py-3 text-sm text-text-main hover:bg-surface-alt transition-colors">
                           <User size={16} className="text-muted" /> Akun Saya
+                        </Link>
+                        <Link to="/tentang" className="flex items-center gap-2.5 px-4 py-3 text-sm text-text-main hover:bg-surface-alt transition-colors">
+                          <Info size={16} className="text-muted" /> Tentang Harmonee
                         </Link>
                         {isAdmin && (
                           <Link to="/admin" className="flex items-center gap-2.5 px-4 py-3 text-sm text-text-main hover:bg-surface-alt transition-colors">

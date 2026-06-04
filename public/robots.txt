@@ -1,6 +1,14 @@
 User-agent: *
+# Halaman privat — jangan diindex
 Disallow: /account
 Disallow: /admin
+
+# Halaman publik — boleh diindex
 Allow: /
+Allow: /hotel
+Allow: /lifestyle
+Allow: /tentang
+Allow: /privacy
+Allow: /terms
 
 Sitemap: https://harmonee.web.id/sitemap.xml
